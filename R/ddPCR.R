@@ -8,8 +8,8 @@
 
 library(clue)
 library(flowDensity)
-source("cluster_functions.R")
-source("functions.R")
+source("R/cluster_functions.R")
+source("R/functions.R")
 
 
 

@@ -2,10 +2,12 @@
 
 export(createEnsemble)
 export(runDensity)
+export(runDropClust)
 export(runPeaks)
 export(runSam)
 import(SamSPECTRAL)
 import(clue)
 import(flowDensity)
 import(flowPeaks)
+import(parallel)
 import(plotrix)
