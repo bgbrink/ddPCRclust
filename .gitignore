@@ -36,3 +36,4 @@ vignettes/*.pdf
 # Miscellanous
 .Rbuildignore
 .DS_Store
+/results/

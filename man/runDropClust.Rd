@@ -15,23 +15,16 @@ runDropClust(files, numOfMarkers = 4, sensitivity = 1)
 }
 \value{
 \item{data}{The original input data minus the removed events (for plotting)}
-\item{confidence} The agreement between the different clustering results in percent. If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.
+\item{confidence}{The agreement between the different clustering results in percent. If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.}
 \item{counts}{The droplet count for each cluster.}
 }
 \description{
 Description.
 }
 \examples{
-# Run dropClust:
-file <- "example.csv"
-result <- runDropClust(file)
-
-# Plot the result:
-p <- ggplot(data = result[[1]]$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
-p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T) + ggtitle("example") + theme_bw()+ theme(legend.position="none")
-p
-
-# Run dropClust with multiple files:
-files <- c("example.csv", "example2.csv", "example3.csv", "example4.csv")
-result <- runDropClust(files)
+# Run dropClust
+exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = T)
+result <- runDropClust(exampleFiles)
+# Plot the results
+exportPlots(result, "./results/", "examples")
 }

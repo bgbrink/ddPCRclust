@@ -19,7 +19,7 @@ createEnsemble(dens = NULL, sam = NULL, peaks = NULL, numOfMarkers, file)
 }
 \value{
 \item{data}{The original input data minus the removed events (for plotting)}
-\item{confidence} The agreement between the different clustering results in percent. If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.
+\item{confidence}{The agreement between the different clustering results in percent. If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.}
 \item{counts}{The droplet count for each cluster.}
 }
 \description{

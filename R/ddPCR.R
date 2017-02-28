@@ -484,7 +484,7 @@ countEvents <- function(result) {
 #' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
-#' \item{confidence} The agreement between the different clustering results in percent. If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.
+#' \item{confidence}{The agreement between the different clustering results in percent. If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.}
 #' \item{counts}{The droplet count for each cluster.}
 #' @export
 #' @examples
