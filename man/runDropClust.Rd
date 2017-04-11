@@ -4,7 +4,7 @@
 \alias{runDropClust}
 \title{Find the clusters}
 \usage{
-runDropClust(files, numOfMarkers = 4, sensitivity = 1)
+runDropClust(files, numOfMarkers = 4, sensitivity = 1, template = NULL)
 }
 \arguments{
 \item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up.}

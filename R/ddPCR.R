@@ -1,13 +1,10 @@
 ## Part of the dropClust algorithm
-## Author: Benedikt Brink
-## February 2017
+## Author: Benedikt G Brink, Bielefeld University
+## April 2017
 
 #' @include cluster_functions.R
 #' @include functions.R
-#' @import clue flowDensity
 
-library(clue)
-library(flowDensity)
 source("R/cluster_functions.R")
 source("R/functions.R")
 
@@ -15,7 +12,7 @@ source("R/functions.R")
 
 #' Find the clusters using flowDensity
 #'
-#' Find the rain and assign it based on the distance to vector lines connecting the cluster centres.
+#' Use the local density function of the flowDensity package to find the cluster centres of the ddPCR reaction. Clusters are then labelled based on their rotated position and lastly the rain is assigned.
 #'
 #' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color.
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
@@ -26,7 +23,7 @@ source("R/functions.R")
 #' \item{firstClusters}{The position of the primary clusters.}
 #' \item{partition}{The cluster numbers as a CLUE partition (see CLUE package for more information).}
 #' @export
-#' @import flowDensity plotrix
+#' @import flowDensity plotrix clue
 #' @examples
 #' file <- read.csv("example.csv")
 #' data_dir <- system.file("extdata", package = "flowDensity")
@@ -37,6 +34,7 @@ source("R/functions.R")
 runDensity <- function(file, sensitivity=1, numOfMarkers) {
   library(flowDensity)
   library(plotrix)
+  library(clue)
   
   # ****** Parameters *******
   scalingParam <<- c(max(file[,1])/25, max(file[,2])/25)
@@ -172,7 +170,7 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
   ClusterCentresNew[which(is.nan(ClusterCentresNew))] <- ClusterCentres[which(is.nan(ClusterCentresNew))]
   
   
-  fDensResult <- assignRain(clusterMeans = ClusterCentresNew, data = f@exprs, result = result, emptyDroplets = 1, firstClusters = posOfFirsts, secondClusters = posOfSeconds, thirdClusters = posOfThirds, fourthCluster = posOfFourth)
+  fDensResult <- assignRain(clusterMeans = ClusterCentresNew, data = f@exprs, result = result, emptyDroplets = 1, firstClusters = posOfFirsts, secondClusters = posOfSeconds, thirdClusters = posOfThirds, fourthCluster = posOfFourth, flowDensity = T)
   
   if (NumberOfSinglePos == 1) {
     names <- c("1","Empties","Removed","Total", "Runtime")
@@ -228,7 +226,7 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
 #' \item{firstClusters}{The position of the primary clusters.}
 #' \item{partition}{The cluster numbers as a CLUE partition (see CLUE package for more information).}
 #' @export
-#' @import SamSPECTRAL
+#' @import SamSPECTRAL flowDensity clue
 #' @examples
 #' file <- read.csv("example.csv")
 #' data_dir <- system.file("extdata", package = "flowDensity")
@@ -238,12 +236,12 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
 #' plot(samResult$data, pch=19,cex=0.2, col= ColoursUsed[samResult$clusters])
 runSam <- function(file, sensitivity = 1, numOfMarkers) {
   library(SamSPECTRAL)
+  library(flowDensity)
+  library(clue)
   
   # ****** Parameters *******
-  ColoursUsed <<- c("red","orange","yellow","green","darkgreen","cyan","blue","purple","seagreen4", "magenta", "grey", "grey50", "brown",
-                    "coral2", "burlywood1", "aquamarine2", "darkslategray3", "lawngreen", "lightpink", "khaki", "mediumpurple", "yellowgreen",
-                    "cadetblue", "blueviolet", "chartreuse", "chocolate", "darkblue", "darkgoldenrod", "darkred", "darkseagreen", "darkolivegreen")
   scalingParam <<- c(max(file[,1])/25, max(file[,2])/25)
+  CutAbovePrimary <<- mean(scalingParam)*2
   epsilon <<- 0.02/sensitivity^3
   threshold <<- 0.1/sensitivity^2
   m <- trunc(nrow(file)/20)
@@ -306,7 +304,7 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
     
   }
   samRes <- mergeClusters(samRes, clusterMeans, samResult, badClusters)
-  rain <- assignRain(clusterMeans, data, samRes, emptyDroplets, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters, quaternaryCluster)
+  rain <- assignRain(clusterMeans, data, samRes, emptyDroplets, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters, quaternaryCluster, F)
   samRes <- rain$result
   samTable <- table(samRes)
   clusterCount <- samTable[as.character(samResult)]
@@ -349,7 +347,7 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
 #' \item{firstClusters}{The position of the primary clusters.}
 #' \item{partition}{The cluster numbers as a CLUE partition (see CLUE package for more information).}
 #' @export
-#' @import flowPeaks
+#' @import flowPeaks flowDensity clue
 #' @examples
 #' file <- read.csv("example.csv")
 #' data_dir <- system.file("extdata", package = "flowDensity")
@@ -359,11 +357,10 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
 #' plot(peaksResult$data, pch=19,cex=0.2, col= ColoursUsed[peaksResult$clusters])
 runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
   library(flowPeaks)
+  library(flowDensity)
+  library(clue)
   
   # ****** Parameters *******
-  ColoursUsed <<- c("red","orange","yellow","green","darkgreen","cyan","blue","purple","seagreen4", "magenta", "grey", "grey50", "brown",
-                    "coral2", "burlywood1", "aquamarine2", "darkslategray3", "lawngreen", "lightpink", "khaki", "mediumpurple", "yellowgreen",
-                    "cadetblue", "blueviolet", "chartreuse", "chocolate", "darkblue", "darkgoldenrod", "darkred", "darkseagreen", "darkolivegreen")
   scalingParam <<- c(max(file[,1])/25, max(file[,2])/25)
   CutAbovePrimary <<- mean(scalingParam)*2
   epsilon <<- 0.02/sensitivity^3
@@ -427,7 +424,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
         }
   
   fPeaksRes$peaks.cluster <- mergeClusters(fPeaksRes$peaks.cluster, clusterMeans, fPeaksResult, badClusters)
-  rain <- assignRain(clusterMeans, data, fPeaksRes$peaks.cluster, emptyDroplets, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters, quaternaryCluster)
+  rain <- assignRain(clusterMeans, data, fPeaksRes$peaks.cluster, emptyDroplets, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters, quaternaryCluster, F)
   fPeaksRes$peaks.cluster <- rain$result
   fPeaksTable <- table(fPeaksRes$peaks.cluster)
   clusterCount <- fPeaksTable[as.character(fPeaksResult)]
@@ -454,7 +451,6 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
   return(list(data=result, counts=fPeaksCount, firstClusters=firstClusters, partition=as.cl_partition(finalPeaksRes)))
 }
 
-
 countEvents <- function(result) {
   countedResult <- NULL
   result <- as.matrix(result)
@@ -476,6 +472,7 @@ countEvents <- function(result) {
 
 #' Create a cluster ensemble.
 #'
+#' Description...
 #'
 #' @param dens The result of the flowDensity algorithm as a CLUE partition.
 #' @param sam The result of the samSPECTRAL algorithm as a CLUE partition.
@@ -487,15 +484,21 @@ countEvents <- function(result) {
 #' \item{confidence}{The agreement between the different clustering results in percent. If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.}
 #' \item{counts}{The droplet count for each cluster.}
 #' @export
+#' @import clue
 #' @examples
-#' file <- read.csv("example.csv")
-#' data_dir <- system.file("extdata", package = "flowDensity")
-#' load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
-#' f@@exprs <- as.matrix(file)
-#' peaksResult <- runPeaks(file, f, 1, 4)
-#' plot(peaksResult$data, pch=19,cex=0.2, col= ColoursUsed[peaksResult$clusters])
+#' example...
 createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, numOfMarkers, file) {
-  listResults <- c(list(dens$partition), list(sam$partition), list(peaks$partition))
+  library(clue)
+  listResults <- list()
+  if (!is.null(dens$partition)) {
+    listResults <- c(listResults, list(dens$partition))
+  }
+  if (!is.null(sam$partition)) {
+    listResults <- c(listResults, list(sam$partition))
+  }  
+  if (!is.null(peaks$partition)) {
+    listResults <- c(listResults, list(peaks$partition))
+  }
   file <- file[,c(2,1)] # switch axis to be consistent
   
   if (length(listResults) == 0) {

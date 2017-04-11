@@ -1,4 +1,7 @@
 # A collection of useful functions
+## Part of the dropClust algorithm
+## Author: Benedikt G Brink, Bielefeld University
+## April 2017
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # Prints out the time since start_time. Used for optimizing code.
@@ -59,4 +62,10 @@ insertRow <- function(existingDF, newrow, r) {
   existingDF <- existingDF[order(c(1:(nrow(existingDF)-1),r-0.5)),]
   row.names(existingDF) <- 1:nrow(existingDF)
   return(existingDF)
+}
+
+distToRect <- function(rectMin, rectMax, point) {
+  dx <- max(rectMin[1] - point[1], 0, point[1] - rectMax[1])
+  dy <- max(rectMin[2] - point[2], 0, point[2] - rectMax[2])
+  return(sqrt(dx^2 + dy^2))
 }

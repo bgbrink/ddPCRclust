@@ -23,13 +23,8 @@ createEnsemble(dens = NULL, sam = NULL, peaks = NULL, numOfMarkers, file)
 \item{counts}{The droplet count for each cluster.}
 }
 \description{
-Create a cluster ensemble.
+Description...
 }
 \examples{
-file <- read.csv("example.csv")
-data_dir <- system.file("extdata", package = "flowDensity")
-load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
-f@exprs <- as.matrix(file)
-peaksResult <- runPeaks(file, f, 1, 4)
-plot(peaksResult$data, pch=19,cex=0.2, col= ColoursUsed[peaksResult$clusters])
+example...
 }

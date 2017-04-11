@@ -12,6 +12,20 @@
 NULL
 #> NULL
 
+batchRunDropClust <- function(directory) {
+  directory <- normalizePath(directory)
+  folders <- list.files(directory, full.names = T)
+  
+  for (i in 1:length(folders)) {
+    print(paste("starting", basename(folders[i])))
+    files <- list.files(folders[i], pattern = ".csv", full.names = T)
+    result <- runDropClust(files)
+    exportPlots(result, directory, basename(folders[i]))
+    exportToCSV(result, directory, basename(folders[i]))
+  }
+}
+
+
 #' Find the clusters
 #'
 #' Description.
@@ -31,15 +45,22 @@ NULL
 #' result <- runDropClust(exampleFiles)
 #' # Plot the results
 #' exportPlots(result, "./results/", "examples")
-runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1) {
+runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NULL) {
   library(parallel)
   
-  if(length(files>1)) {
-    csvFiles <- mclapply(files, read.csv)
-    dens_result <- mcmapply(dens_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F)
-    sam_result <- mcmapply(sam_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F)
-    peaks_result <- mcmapply(peaks_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F)
-    superResults <- mcmapply(ensemble_wrapper, dens_result, sam_result, peaks_result, numOfMarkers, csvFiles, SIMPLIFY = F)
+  if (!is.null(template)) {
+    template <- read.csv(template)
+    ids <- unlist(lapply(files, function(x) {grep("^[[:upper:]][[:digit:]][[:digit:]]$", unlist(strsplit(x, "_")), value = T)}))
+    numOfMarkers <- sapply(ids, function(x) {as.numeric(as.character(template[which(template[,1] == x), 3]))})
+  }
+  
+  
+  if(length(files)>1) {
+    csvFiles <- mclapply(files, read.csv, mc.cores = detectCores())
+    dens_result <- mcmapply(dens_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F, mc.cores = detectCores())
+    sam_result <- mcmapply(sam_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F, mc.cores = detectCores())
+    peaks_result <- mcmapply(peaks_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F, mc.cores = detectCores())
+    superResults <- mcmapply(ensemble_wrapper, dens_result, sam_result, peaks_result, numOfMarkers, csvFiles, SIMPLIFY = F, mc.cores = detectCores())
   } else {
     csvFiles <- read.csv(files)
     dens_result <- dens_wrapper(file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity)
@@ -67,7 +88,8 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1) {
 #' exportPlots(result, "./results/", "examples")
 exportPlots <- function(data, directory, experiment) {
   library(ggplot2)
-  ifelse(!dir.exists(file.path(directory, experiment)), dir.create(file.path(directory, experiment)), FALSE)
+  directory <- normalizePath(directory)
+  ifelse(!dir.exists(paste0(directory,"/",experiment,"/results")), dir.create(paste0(directory,"/",experiment,"/results")), FALSE)
   
   for (i in 1:length(data)) {
     result <- data[[i]]
@@ -85,29 +107,73 @@ exportPlots <- function(data, directory, experiment) {
       cbPalette <- c("#999999", "#bc8775")
     }
     p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T) + ggtitle(paste(experiment, i)) + theme_bw()+ theme(legend.position="none") + scale_colour_manual(values=cbPalette)
-    ggsave(paste0(directory,"/",experiment,"/",experiment,"_", i, ".png"), p)
+    ggsave(paste0(directory,"/",experiment,"/results/",experiment,"_", i, ".png"), p)
   }
 }
 
+exportToExcel <- function(data, directory, experiment, raw = F) {
+  library(xlsx)
+  directory <- normalizePath(directory)
+  ifelse(!dir.exists(paste0(directory,"/",experiment,"/results")), dir.create(paste0(directory,"/",experiment,"/results")), FALSE)
+  
+  for (i in 1:length(data)) {
+    result <- data[[i]]
+    if (is.null(result$data)) {
+      next
+    }
+    file <- paste0(directory,"/",experiment,"/results/",experiment,"_", i, ".xlsx")
+    conf <- result$confidence
+    names(conf) <- "Confidence"
+    write.xlsx(c(result$counts, conf), file = file)
+    if (raw) {
+      file <- paste0(directory,"/",experiment,"/results/",experiment,"_", i, "_raw.xlsx")
+      write.xlsx(result$data, file = file)
+    }
+  }
+}
 
+exportToCSV <- function(data, directory, experiment, raw = F) {
+  directory <- normalizePath(directory)
+  ifelse(!dir.exists(paste0(directory,"/",experiment,"/results")), dir.create(paste0(directory,"/",experiment,"/results")), FALSE)
+  
+  for (i in 1:length(data)) {
+    result <- data[[i]]
+    if (is.null(result$data)) {
+      next
+    }
+    file <- paste0(directory,"/",experiment,"/results/",experiment,"_", i, ".csv")
+    conf <- result$confidence
+    names(conf) <- "Confidence"
+    write.csv(c(result$counts, conf), file = file)
+    if (raw) {
+      file <- paste0(directory,"/",experiment,"/results/",experiment,"_", i, "_raw.csv")
+      write.csv(result$data, file = file)
+    }
+  }
+}
+
+# wrapper function for exception handling in mcmapply
 dens_wrapper <- function(file, sensitivity=1, numOfMarkers) {
   result <- tryCatch(runDensity(file, sensitivity, numOfMarkers), error = function(e) {
     print(e)
   })
 }
 
+# wrapper function for exception handling in mcmapply
 sam_wrapper <- function(file, sensitivity=1, numOfMarkers) {
   result <- tryCatch(runSam(file, sensitivity, numOfMarkers), error = function(e) {
     print(e)
   })
 }
 
+# wrapper function for exception handling in mcmapply
 peaks_wrapper <- function(file, sensitivity=1, numOfMarkers) {
   result <- tryCatch(runPeaks(file, sensitivity, numOfMarkers), error = function(e) {
     print(e)
   })
 }
 
+# wrapper function for exception handling in mcmapply
 ensemble_wrapper <- function(dens_result, sam_result, peaks_result, plex, csvFiles) {
   result <- tryCatch(createEnsemble(dens_result, sam_result, peaks_result, plex, csvFiles), error = function(e) {
     print(e)

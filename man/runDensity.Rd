@@ -20,7 +20,7 @@ runDensity(file, sensitivity = 1, numOfMarkers)
 \item{partition}{The cluster numbers as a CLUE partition (see CLUE package for more information).}
 }
 \description{
-Find the rain and assign it based on the distance to vector lines connecting the cluster centres.
+Use the local density function of the flowDensity package to find the cluster centres of the ddPCR reaction. Clusters are then labelled based on their rotated position and lastly the rain is assigned.
 }
 \examples{
 file <- read.csv("example.csv")

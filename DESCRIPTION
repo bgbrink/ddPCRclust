@@ -1,7 +1,7 @@
 Package: dropClust
 Title: Clustering algorithms for ddPCR data
-Version: 0.8.0
-Date: 2017-02-10
+Version: 0.8.3
+Date: 2017-03-02
 Authors@R: c(person("Benedikt", "Brink", email = "bbrink@cebitec.uni-bielefeld.de", role = c("aut", "cre")), person("Justin", "Meskas", email = "jmeskas@bccrc.ca", role = "aut"))
 Description: The dropClust algorithm is used to automatically quantify the
     events of a multiplexed ddPCR reaction. In order to determine the correct
@@ -18,7 +18,8 @@ Depends:
     flowDensity,
     SamSPECTRAL,
     flowPeaks,
-    clue
+    clue,
+    parallel
 License: What license is it under?
 LazyData: true
 RoxygenNote: 6.0.1
