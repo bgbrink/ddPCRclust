@@ -4,14 +4,42 @@
 \name{dropClust}
 \alias{dropClust}
 \alias{dropClust-package}
-\title{dropClust: A package for automated quantification of multiplexed ddPCR data.}
+\alias{dropClust-package}
+\title{dropClust 
+A package for automated quantification of multiplexed ddPCR data}
 \description{
-The dropClust algorithm is used to automatically quantify the events of a multiplexed ddPCR reaction.
+The dropClust algorithm can automatically quantify the events of ddPCR reaction with up to four markers.
 In order to determine the correct droplet count for each marker, it is crucial to both identify all clusters and label them correctly based on their position.
-To be more robust, three different algorithms for flow cytometry data were adapted and extended in order to analyze ddPCR data.
+For more information on what data can be analyzed and how a template needs to be formatted, please check the project repository on github.
 }
-\section{Foo functions}{
+\section{Usage}{
 
-The foo functions ...
+The main function of the package is \code{\link{runDropClust}}. This function runs the algorithm with one or multiple files, automatically distributing them amongst all cpu cores using the \link[parallel]{parallel} package (parallelization does not work on windows).
+Afterwards, the results can be exported in different ways, using \code{\link{exportPlots}}, \code{\link{exportToExcel}} and \code{\link{exportToCSV}}.
+Once the clustering is finished, copies per droplet (CPD) for each marker can be calculated using \code{\link{calculateCPDs}}.
+
+These functions provide access to all functionalities of the dropClust package. However, expert users can directly call some internal functions of the algorithm, if they find it necessary. 
+Here is a list of all available supplemental functions: \cr
+\code{\link{runDensity}} \cr
+\code{\link{runSam}} \cr
+\code{\link{runPeaks}} \cr
+\code{\link{createEnsemble}}
 }
 
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/bgbrink/dropClust}
+}
+
+}
+\author{
+\strong{Maintainer}: Benedikt G. Brink \email{bbrink@cebitec.uni-bielefeld.de}
+
+Other contributors:
+\itemize{
+  \item Justin Meskas \email{jmeskas@bccrc.ca} [contributor]
+  \item Ryan R. Brinkman \email{rbrinkman@bccrc.ca} [contributor]
+}
+
+}

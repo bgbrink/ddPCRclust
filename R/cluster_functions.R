@@ -1080,26 +1080,28 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
   # Calculate standard deviations:
   newData <- subset(data, !result %in% c(secondClusters,thirdClusters,fourthCluster))
   newData <- subset(newData, !(newData[,1] < (clusterMeans[emptyDroplets,1]+sdEmpties[1]) & newData[,2] < (clusterMeans[emptyDroplets,2]+sdEmpties[2])))
-  newData <- subset(newData, newData[,2] < clusterMeans[firstClusters[1],2] & newData[,1] < clusterMeans[firstClusters[length(firstClusters)],1])
   for (c in firstClusters) {
     if (c==0) next
-    sdeviation <- c(sd(data[which(result == c),1]), 
-                    sd(data[which(result == c),2]))
-    if (anyNA(sdeviation)) sdeviation <- scalingParam/4
+    sdeviation <- 2*c(sd(data[which(result == c),1]), 
+                      sd(data[which(result == c),2]))
+    if (anyNA(sdeviation)) sdeviation <- scalingParam/2
+    if (any(sdeviation > scalingParam)) sdeviation <- scalingParam
     sdeviations[[c]] <- sdeviation
   }
   for (c in secondClusters) {
     if (c==0) next
-    sdeviation <- c(sd(data[which(result == c),1]), 
-                    sd(data[which(result == c),2]))
-    if (anyNA(sdeviation)) sdeviation <- scalingParam/4
+    sdeviation <- 2*c(sd(data[which(result == c),1]), 
+                      sd(data[which(result == c),2]))
+    if (anyNA(sdeviation)) sdeviation <- scalingParam/2
+    if (any(sdeviation > scalingParam)) sdeviation <- scalingParam
     sdeviations[[c]] <- sdeviation
   }
   for (c in thirdClusters) {
     if (c==0) next
-    sdeviation <- c(sd(data[which(result == c),1]), 
-                    sd(data[which(result == c),2]))
-    if (anyNA(sdeviation)) sdeviation <- scalingParam/4
+    sdeviation <- 2*c(sd(data[which(result == c),1]), 
+                      sd(data[which(result == c),2]))
+    if (anyNA(sdeviation)) sdeviation <- scalingParam/2
+    if (any(sdeviation > scalingParam)) sdeviation <- scalingParam
     sdeviations[[c]] <- sdeviation
   }
   
@@ -1109,8 +1111,7 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
     sdC <- sdeviations[[c]]
     result[as.numeric(rownames(newData[(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
                                         & newData[,2] < clusterMeans[c,2]+sdC[2] & newData[,2] > clusterMeans[c,2]-sdC[2]),]))] <- c
-    newData <- subset(newData, !(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
-                                 & newData[,2] < clusterMeans[c,2]+sdC[2] & newData[,2] > clusterMeans[c,2]-sdC[2]))
+    newData <- subset(newData, !(newData[,1] > clusterMeans[c,1]-sdC[1] & newData[,2] > clusterMeans[c,2]+sdC[2]))
     #    newData <- newData[-intersect(as.numeric(rownames(newData)), which(result==c)),]
   }
   if (nrow(newData) > 0) {
@@ -1162,8 +1163,7 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
       sdC <- sdeviations[[c]]
       result[as.numeric(rownames(newData[(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
                                           & newData[,2] < clusterMeans[c,2]+sdC[2] & newData[,2] > clusterMeans[c,2]-sdC[2]),]))] <- c
-      newData <- subset(newData, !(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
-                                   & newData[,2] < clusterMeans[c,2]+sdC[2] & newData[,2] > clusterMeans[c,2]-sdC[2]))
+      newData <- subset(newData, !(newData[,1] > clusterMeans[c,1]-sdC[1] & newData[,2] > clusterMeans[c,2]+sdC[2]))
     }
     if (nrow(newData) > 0) {
       i <- 1
@@ -1249,8 +1249,7 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
       sdC <- sdeviations[[c]]
       result[as.numeric(rownames(newData[(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
                                           & newData[,2] < clusterMeans[c,2]+sdC[2] & newData[,2] > clusterMeans[c,2]-sdC[2]),]))] <- c
-      newData <- subset(newData, !(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
-                                   & newData[,2] < clusterMeans[c,2]+sdC[2] & newData[,2] > clusterMeans[c,2]-sdC[2]))
+      newData <- subset(newData, !(newData[,1] > clusterMeans[c,1]-sdC[1] & newData[,2] > clusterMeans[c,2]+sdC[2]))
     }
     if (nrow(newData) > 0) {
       m <- matrix(nrow = nrow(newData), ncol = 3*length(thirdClusters))

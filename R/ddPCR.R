@@ -8,33 +8,37 @@
 source("R/cluster_functions.R")
 source("R/functions.R")
 
+library(flowDensity)
+library(SamSPECTRAL)
+library(flowPeaks)
+library(plotrix)
+library(clue)
 
 
 #' Find the clusters using flowDensity
 #'
 #' Use the local density function of the flowDensity package to find the cluster centres of the ddPCR reaction. Clusters are then labelled based on their rotated position and lastly the rain is assigned.
 #'
-#' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color.
+#' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
 #' \item{firstClusters}{The position of the primary clusters.}
-#' \item{partition}{The cluster numbers as a CLUE partition (see CLUE package for more information).}
+#' \item{partition}{The cluster numbers as a CLUE partition (see clue package for more information).}
 #' @export
-#' @import flowDensity plotrix clue
 #' @examples
-#' file <- read.csv("example.csv")
-#' data_dir <- system.file("extdata", package = "flowDensity")
-#' load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
-#' f@@exprs <- as.matrix(file)
-#' densResult <- runDensity(file, f)
-#' plot(densResult$data, pch=19,cex=0.2, col= ColoursUsed[densResult$clusters])
+#' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+#' file <- read.csv(exampleFiles[3])
+#' densResult <- runDensity(file = file, numOfMarkers = 4)
+#' 
+#' library(ggplot2)
+#' p <- ggplot(data = densResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+#' p <- p+geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)+ggtitle("flowDensity example")+theme_bw()+theme(legend.position="none")
+#' p
+#' 
 runDensity <- function(file, sensitivity=1, numOfMarkers) {
-  library(flowDensity)
-  library(plotrix)
-  library(clue)
   
   # ****** Parameters *******
   scalingParam <<- c(max(file[,1])/25, max(file[,2])/25)
@@ -46,8 +50,8 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
   data_dir <- system.file("extdata", package = "flowDensity")
   load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
   
-  f@exprs <- as.matrix(file[,c(2,1)]) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
-  file <- file[,c(2,1)] # switch axis to be consistent
+  f@exprs <- as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
+  #file <- file[,c(2,1)] # switch axis to be consistent
   
   DataRemoved <- FinalResults <- NULL
   
@@ -217,27 +221,27 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
 #'
 #' Find the rain and assign it based on the distance to vector lines connecting the cluster centres.
 #'
-#' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color.
+#' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
 #' \item{firstClusters}{The position of the primary clusters.}
-#' \item{partition}{The cluster numbers as a CLUE partition (see CLUE package for more information).}
+#' \item{partition}{The cluster numbers as a CLUE partition (see clue package for more information).}
 #' @export
 #' @import SamSPECTRAL flowDensity clue
 #' @examples
-#' file <- read.csv("example.csv")
-#' data_dir <- system.file("extdata", package = "flowDensity")
-#' load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
-#' f@@exprs <- as.matrix(file)
-#' samResult <- runSam(file, f, 500, 1, 4)
-#' plot(samResult$data, pch=19,cex=0.2, col= ColoursUsed[samResult$clusters])
+#' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+#' file <- read.csv(exampleFiles[3])
+#' samResult <- runSam(file = file, numOfMarkers = 4)
+#' 
+#' library(ggplot2)
+#' p <- ggplot(data = samResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+#' p <- p+geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)+ggtitle("SamSPECTRAL example")+theme_bw()+theme(legend.position="none")
+#' p
+#' 
 runSam <- function(file, sensitivity = 1, numOfMarkers) {
-  library(SamSPECTRAL)
-  library(flowDensity)
-  library(clue)
   
   # ****** Parameters *******
   scalingParam <<- c(max(file[,1])/25, max(file[,2])/25)
@@ -252,8 +256,8 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
   data_dir <- system.file("extdata", package = "flowDensity")
   load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
   
-  f@exprs <- as.matrix(file[,c(2,1)]) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
-  file <- file[,c(2,1)] # switch axis to be consistent
+  f@exprs <- as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
+ # file <- file[,c(2,1)] # switch axis to be consistent
   
   samRes <- SamSPECTRAL(data.points=as.matrix(file),dimensions=c(1,2), normal.sigma = (400*sensitivity^2), separation.factor = (0.88*sensitivity), m = m, talk=F)
   data <- file
@@ -338,27 +342,26 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
 #'
 #' Find the rain and assign it based on the distance to vector lines connecting the cluster centres.
 #'
-#' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color.
+#' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
 #' \item{firstClusters}{The position of the primary clusters.}
-#' \item{partition}{The cluster numbers as a CLUE partition (see CLUE package for more information).}
+#' \item{partition}{The cluster numbers as a CLUE partition (see clue package for more information).}
 #' @export
-#' @import flowPeaks flowDensity clue
 #' @examples
-#' file <- read.csv("example.csv")
-#' data_dir <- system.file("extdata", package = "flowDensity")
-#' load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
-#' f@@exprs <- as.matrix(file)
-#' peaksResult <- runPeaks(file, f, 1, 4)
-#' plot(peaksResult$data, pch=19,cex=0.2, col= ColoursUsed[peaksResult$clusters])
+#' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+#' file <- read.csv(exampleFiles[3])
+#' peaksResult <- runPeaks(file = file, numOfMarkers = 4)
+#' 
+#' library(ggplot2)
+#' p <- ggplot(data = peaksResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+#' p <- p+geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)+ggtitle("flowPeaks example")+theme_bw()+theme(legend.position="none")
+#' p
+#' 
 runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
-  library(flowPeaks)
-  library(flowDensity)
-  library(clue)
   
   # ****** Parameters *******
   scalingParam <<- c(max(file[,1])/25, max(file[,2])/25)
@@ -372,8 +375,8 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
   data_dir <- system.file("extdata", package = "flowDensity")
   load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
   
-  f@exprs <- as.matrix(file[,c(2,1)]) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
-  file <- file[,c(2,1)] # switch axis to be consistent
+  f@exprs <- as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
+  #file <- file[,c(2,1)] # switch axis to be consistent
   
   fPeaksRes <- flowPeaks(file, tol=0, h0=(0.3/sensitivity^1.5), h=(0.4/sensitivity^1.5))
   data <- file
@@ -451,28 +454,44 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
   return(list(data=result, counts=fPeaksCount, firstClusters=firstClusters, partition=as.cl_partition(finalPeaksRes)))
 }
 
-countEvents <- function(result) {
-  countedResult <- NULL
-  result <- as.matrix(result)
-  for (i in 1:nrow(result)) {
-    name <- result[i,1]
-    well <- result[i,-1]
-    ones <- sum(as.integer(well[grep('1', names(well))]), na.rm = T)
-    twos <- sum(as.integer(well[grep('2', names(well))]), na.rm = T)
-    threes <- sum(as.integer(well[grep('3', names(well))]), na.rm = T)
-    fours <- sum(as.integer(well[grep('4', names(well))]), na.rm = T)
-    empties <- sum(as.integer(well[grep('Empties', names(well))]))
-    total <- sum(as.integer(well[grep('Total', names(well))]))
-    row <- cbind(ones, twos, threes, fours, empties, total) 
-    rownames(row) <- name
-    countedResult <- rbind(countedResult, row)
+#' Calculates the copies per droplet
+#'
+#' This function takes the results of the clustering and calculates the actual counts per marker, as well as the counts per droplet (CPD) for each marker. 
+#'
+#' @param results The result of the dropClust algorithm.
+#' @return
+#' A list of lists, containing the counts for empty droplets, each marker with both total droplet count and CPD, and total number of droplets, for each element of the input list respectively. 
+#' @export
+#' @examples
+#' # Run dropClust
+#' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+#' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
+#' 
+#' # Calculate the CPDs
+#' markerCPDs <- calculateCPDs(result$results)
+#'
+calculateCPDs <- function(results) {
+  countedResult <- list()
+
+  for (i in 1:length(results)) {
+    id <- names(results[i])
+    result <- results[[i]]$counts
+    total <- sum(as.integer(result[grep('Total', names(result))]), na.rm = T)
+    empties <- sum(as.integer(result[grep('Empties', names(result))]), na.rm = T)
+    countedResult[[id]][["Empties"]] <- empties
+    for (i in 1:4) {
+      counts <- sum(as.integer(result[grep(i, names(result))]), na.rm = T)
+      cpd <- -log(1-counts/total)
+      countedResult[[id]][[paste0("M", i)]] <- list(counts=counts, cpd=cpd)
+    }
+    countedResult[[id]][["Total"]] <- total
   }
   return(countedResult)
 }
 
 #' Create a cluster ensemble.
 #'
-#' Description...
+#' This function takes the three (or less) clustering approaches of the dropClust package and combines them to one cluster ensemble. See \link{cl_medoid} for more information.
 #'
 #' @param dens The result of the flowDensity algorithm as a CLUE partition.
 #' @param sam The result of the samSPECTRAL algorithm as a CLUE partition.
@@ -486,9 +505,16 @@ countEvents <- function(result) {
 #' @export
 #' @import clue
 #' @examples
-#' example...
+#' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+#' file <- read.csv(exampleFiles[3])
+#' densResult <- runDensity(file = file, numOfMarkers = 4)
+#' samResult <- runSam(file = file, numOfMarkers = 4)
+#' peaksResult <- runPeaks(file = file, numOfMarkers = 4)
+#' 
+#' superResult <- createEnsemble(densResult, samResult, peaksResult, 4, file)
+#' 
 createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, numOfMarkers, file) {
-  library(clue)
+
   listResults <- list()
   if (!is.null(dens$partition)) {
     listResults <- c(listResults, list(dens$partition))
@@ -499,7 +525,7 @@ createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, numOfMarkers, 
   if (!is.null(peaks$partition)) {
     listResults <- c(listResults, list(peaks$partition))
   }
-  file <- file[,c(2,1)] # switch axis to be consistent
+  #file <- file[,c(2,1)] # switch axis to be consistent
   
   if (length(listResults) == 0) {
     next

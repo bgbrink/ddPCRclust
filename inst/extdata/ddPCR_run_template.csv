@@ -1,0 +1,10 @@
+> ddPCR_example_data, channel1=HEX, channel2=FAM, dropClust v0.9.0
+Well,Sample type,# of markers,Marker 1,Marker 2,Marker 3,Marker 4
+B01,Blood,4,a,b,c,d
+G01,FFPE,4,a,b,c,d
+F02,Blood,3,a,,c,d
+D03,FFPE,3,a,,c,d
+A04,FFPE,4,a,b,c,d
+G07,Cell line,3,a,,c,d
+G08,Cell line,3,a,,c,d
+E09,FFPE,2,,,c,d

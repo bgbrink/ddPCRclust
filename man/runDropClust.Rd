@@ -2,16 +2,19 @@
 % Please edit documentation in R/dropClust.R
 \name{runDropClust}
 \alias{runDropClust}
-\title{Find the clusters}
+\title{Run the dropClust algorithm}
 \usage{
 runDropClust(files, numOfMarkers = 4, sensitivity = 1, template = NULL)
 }
 \arguments{
-\item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up.}
+\item{files}{The input file(s). More specifically, csv files with two dimensions, each dimension representing one color choannel of the ddPCR reaction.}
+
+\item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up. Can be ignored if a template is provided. 
+Else, a vector with length equal to \code{length(files)} should be provided, containing the number of markers used for the respective reaction.}
 
 \item{sensitivity}{An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
 
-\item{file}{The input files. More specifically, csv files with two dimensions, each dimension representing the intensity for one color.}
+\item{template}{A csv file containing information about the individual ddPCR runs. An example template is provided with this package. For more information, please check the repository on github.}
 }
 \value{
 \item{data}{The original input data minus the removed events (for plotting)}
@@ -19,12 +22,11 @@ runDropClust(files, numOfMarkers = 4, sensitivity = 1, template = NULL)
 \item{counts}{The droplet count for each cluster.}
 }
 \description{
-Description.
+This is the main function of this package. It automatically runs the dropClust algorithm on one or multiple csv files containing the raw data from a ddPCR run with up to 4 markers.
 }
 \examples{
 # Run dropClust
-exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = T)
-result <- runDropClust(exampleFiles)
-# Plot the results
-exportPlots(result, "./results/", "examples")
+exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
+
 }

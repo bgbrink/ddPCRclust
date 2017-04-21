@@ -23,8 +23,15 @@ createEnsemble(dens = NULL, sam = NULL, peaks = NULL, numOfMarkers, file)
 \item{counts}{The droplet count for each cluster.}
 }
 \description{
-Description...
+This function takes the three (or less) clustering approaches of the dropClust package and combines them to one cluster ensemble. See \link{cl_medoid} for more information.
 }
 \examples{
-example...
+exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+file <- read.csv(exampleFiles[3])
+densResult <- runDensity(file = file, numOfMarkers = 4)
+samResult <- runSam(file = file, numOfMarkers = 4)
+peaksResult <- runPeaks(file = file, numOfMarkers = 4)
+
+superResult <- createEnsemble(densResult, samResult, peaksResult, 4, file)
+
 }
