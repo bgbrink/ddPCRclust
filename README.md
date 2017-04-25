@@ -1,6 +1,33 @@
 # dropClust
-##A package for automated quantification of multiplexed ddPCR data.
+## A package for automated quantification of multiplexed ddPCR data.
 
-The dropClust algorithm is used to automatically quantify the events of a multiplexed ddPCR reaction.
-In order to determine the correct droplet count for each marker, it is crucial to both identify all clusters and label them correctly based on their position.
-To be more robust, three different algorithms for flow cytometry data were adapted and extended in order to analyze ddPCR data.
+This R package was designed to automatically quantifying the events of a multiplexed ddPCR reaction.
+During a ddPCR run, each marker gene is fluorescently labeled with a combination of FAM and/or HEX fluorophore, giving it a unique footprint in the two-dimensional space represented by the intensities for each color channel. The position of each droplet within this space reveals, how many and, more importantly, which marker genes it contains. Thus, droplets that belong to the same marker cluster together. However, identifying and labelling these clusters correctly is not trivial, since one droplet can contain more than one marker. To accurately quantify the droplet count for each marker, it is crucial to both identify the clusters and label them correctly, based on their position. 
+<p align="center">
+<img 
+src="https://cloud.githubusercontent.com/assets/11661112/25387153/1b9928d2-29ca-11e7-97b3-ce67694eed0f.png"  
+alt="Example B1"
+width="400">
+<img 
+src="https://cloud.githubusercontent.com/assets/11661112/25387163/20f98c90-29ca-11e7-8a9e-a7efaaf82fd9.png" 
+alt="Example G1"
+width="400">
+</p>
+
+For robustness, dropClust incorporates three independent clustering algorithms: the flowDensity algorithm, published in 2012 by M. Jafar Taghiyar and Mehrnoush Malek, the clustering algorithm SamSPECTRAL, a version of spectral clustering adapted to flow cytometry data and the flowPeaks package, developed by Yongchao Ge and Stuart C. Sealfon. The results are combined into a cluster ensemble. The agreement between the three approaches provides a measure of confidence for clustering results.
+<p align="center">
+<img 
+src="https://cloud.githubusercontent.com/assets/11661112/25387160/1e5eea02-29ca-11e7-871b-e2e3cd2639ec.png"  
+alt="Result B1"
+width="400">
+<img 
+src="https://cloud.githubusercontent.com/assets/11661112/25387164/224c4876-29ca-11e7-9f8f-557b7e515f0a.png" 
+alt="Example G1"
+width="400">
+</p>
+
+## Usage
+Lorem ipsum
+
+## License
+This software was released under the [GPL-2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) license.
