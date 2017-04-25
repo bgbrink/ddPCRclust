@@ -4,7 +4,8 @@
 \alias{runDropClust}
 \title{Run the dropClust algorithm}
 \usage{
-runDropClust(files, numOfMarkers = 4, sensitivity = 1, template = NULL)
+runDropClust(files, numOfMarkers = 4, sensitivity = 1, template = NULL,
+  fast = F)
 }
 \arguments{
 \item{files}{The input file(s). More specifically, csv files with two dimensions, each dimension representing one color choannel of the ddPCR reaction.}
@@ -15,11 +16,23 @@ Else, a vector with length equal to \code{length(files)} should be provided, con
 \item{sensitivity}{An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
 
 \item{template}{A csv file containing information about the individual ddPCR runs. An example template is provided with this package. For more information, please check the repository on github.}
+
+\item{fast}{Run a simple version of the algorithm that is about 10x faster. For very clean data, this can already deliver good results. In any case useful to get a quick overview over the data.}
 }
 \value{
-\item{data}{The original input data minus the removed events (for plotting)}
-\item{confidence}{The agreement between the different clustering results in percent. If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.}
-\item{counts}{The droplet count for each cluster.}
+\item{Results}{The results of the dropClust algorithm. It contains three fields: \cr
+\code{data} The original input data minus the removed events (for plotting) 
+\code{confidence} The agreement between the different clustering results in percent
+If all parts of the algorithm calculated the same result, the clustering is likely to be correct, thus the confidence is high\cr
+\code{counts} The droplet count for each cluster
+}
+\item{Annotations}{The metatdata provided in the header of the template. It contains four fields: \cr
+\code{Name} The name given to this ddPCR experiment \cr
+\code{Ch1} Color channel 1 (usually HEX) \cr
+\code{Ch2} Color channel 2 (usually FAM) \cr
+\code{Descriptions} Additional descriptions about this ddPCR experiment (e.g. date, exprimentor, etc.)
+}
+\item{Template}{A parsed dataframe containing the template, if one was provided.}
 }
 \description{
 This is the main function of this package. It automatically runs the dropClust algorithm on one or multiple csv files containing the raw data from a ddPCR run with up to 4 markers.

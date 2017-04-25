@@ -4,10 +4,12 @@
 \alias{calculateCPDs}
 \title{Calculates the copies per droplet}
 \usage{
-calculateCPDs(results)
+calculateCPDs(results, template = NULL)
 }
 \arguments{
 \item{results}{The result of the dropClust algorithm.}
+
+\item{template}{A parsed dataframe containing the template.}
 }
 \value{
 A list of lists, containing the counts for empty droplets, each marker with both total droplet count and CPD, and total number of droplets, for each element of the input list respectively.

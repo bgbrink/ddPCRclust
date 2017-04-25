@@ -1186,9 +1186,11 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
       m2 <- matrix(nrow = nrow(newData), ncol = length(firstClusters) + length(secondClusters))
       for (row in 1:nrow(newData)) {
         for (cl1 in 1:length(firstClusters)) {
+          if (firstClusters[cl1]==0) next
           m2[row, cl1] <- distToRect(as.numeric(clusterMeans[firstClusters[cl1],])-2*sdeviations[[firstClusters[cl1]]], as.numeric(clusterMeans[firstClusters[cl1],])+2*sdeviations[[firstClusters[cl1]]], as.numeric(newData[row,]))
         }
         for (cl2 in 1:length(secondClusters)) {
+          if (secondClusters[cl2]==0) next
           col <- cl2+length(firstClusters)
           m2[row, col] <- distToRect(as.numeric(clusterMeans[secondClusters[cl2],])-2*sdeviations[[secondClusters[cl2]]], as.numeric(clusterMeans[secondClusters[cl2],])+2*sdeviations[[secondClusters[cl2]]], as.numeric(newData[row,]))
         }
@@ -1267,9 +1269,11 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
       m2 <- matrix(nrow = nrow(newData), ncol = length(secondClusters) + length(thirdClusters))
       for (row in 1:nrow(newData)) {
         for (cl1 in 1:length(secondClusters)) {
+          if (secondClusters[cl1]==0) next
           m2[row, cl1] <- distToRect(as.numeric(clusterMeans[secondClusters[cl1],])-2*sdeviations[[secondClusters[cl1]]], as.numeric(clusterMeans[secondClusters[cl1],])+2*sdeviations[[secondClusters[cl1]]], as.numeric(newData[row,]))
         }
         for (cl2 in 1:length(thirdClusters)) {
+          if (thirdClusters[cl2]==0) next
           col <- cl2+length(secondClusters)
           m2[row, col] <- distToRect(as.numeric(clusterMeans[thirdClusters[cl2],])-2*sdeviations[[thirdClusters[cl2]]], as.numeric(clusterMeans[thirdClusters[cl2],])+2*sdeviations[[thirdClusters[cl2]]], as.numeric(newData[row,]))
         }

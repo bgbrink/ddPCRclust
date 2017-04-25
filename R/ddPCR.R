@@ -55,8 +55,6 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
   
   DataRemoved <- FinalResults <- NULL
   
-  densityTime <- proc.time()
-  
   up1max <- deGate(f, c(1), percentile=0.999, use.percentile=T)
   up1min <- deGate(f, c(1), percentile=0.001, use.percentile=T)
   up2max <- deGate(f, c(2), percentile=0.999, use.percentile=T)
@@ -177,16 +175,16 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
   fDensResult <- assignRain(clusterMeans = ClusterCentresNew, data = f@exprs, result = result, emptyDroplets = 1, firstClusters = posOfFirsts, secondClusters = posOfSeconds, thirdClusters = posOfThirds, fourthCluster = posOfFourth, flowDensity = T)
   
   if (NumberOfSinglePos == 1) {
-    names <- c("1","Empties","Removed","Total", "Runtime")
+    names <- c("1","Empties","Removed","Total")
   } else if (NumberOfSinglePos == 2) {
-    names <- c("1","2","1+2","Empties","Removed","Total", "Runtime")
+    names <- c("1","2","1+2","Empties","Removed","Total")
   } else if (NumberOfSinglePos == 3) {
-    names <- c("1","2","3","1+2","1+3","2+3","1+2+3","Empties","Removed","Total", "Runtime")
+    names <- c("1","2","3","1+2","1+3","2+3","1+2+3","Empties","Removed","Total")
   } else if (NumberOfSinglePos == 4) {
     tempResult <- fDensResult$result
     fDensResult$result[which(tempResult == 8)] <- 9
     fDensResult$result[which(tempResult == 9)] <- 8
-    names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total", "Runtime")
+    names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
   }
   
   NumOfEventsClust <- matrix(0,NumOfClusters,1)
@@ -196,9 +194,7 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
   
   NumOfEventsClust <- c(NumOfEventsClust[2:length(NumOfEventsClust)],NumOfEventsClust[1],length(fDensResult$remove))
   
-  densityTime <- signif((proc.time() - densityTime)[3], digits=4)
-  
-  NumOfEventsClust <- c(NumOfEventsClust, sum(NumOfEventsClust), densityTime) # add on total
+  NumOfEventsClust <- c(NumOfEventsClust, sum(NumOfEventsClust)) # add on total
   #   NumOfEventsClust[c(7,8)] <- NumOfEventsClust[c(8,7)]
   
   names(NumOfEventsClust) = names
@@ -251,14 +247,12 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
   m <- trunc(nrow(file)/20)
   # *************************
   
-  samTime <- proc.time()
-  
   data_dir <- system.file("extdata", package = "flowDensity")
   load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
   
   f@exprs <- as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
- # file <- file[,c(2,1)] # switch axis to be consistent
-  
+
+  #### Start of algorithm ####
   samRes <- SamSPECTRAL(data.points=as.matrix(file),dimensions=c(1,2), normal.sigma = (400*sensitivity^2), separation.factor = (0.88*sensitivity), m = m, talk=F)
   data <- file
   temp <- lapply(min(samRes, na.rm = T):max(samRes, na.rm = T), function(x) return(apply(data[samRes==x,], 2, median, na.rm = T)))
@@ -275,22 +269,22 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
   firstClusters <- findPrimaryClusters(samRes, clusterMeans, emptyDroplets, badClusters, dimensions, file, f, numOfMarkers)
   if(length(firstClusters) == 1) {
     samResult <- c(emptyDroplets, firstClusters)
-    names <- c("1","Empties","Removed","Total", "Runtime")
+    names <- c("1","Empties","Removed","Total")
   }
   if(length(firstClusters) == 2) {
     quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters)
     samResult <- c(emptyDroplets, firstClusters, quaternaryCluster)
-    names <- c("1","2","1+2","Empties","Removed","Total", "Runtime")
+    names <- c("1","2","1+2","Empties","Removed","Total")
   }
   if(length(firstClusters) == 3) {
     secondaryClusters <- findSecondaryClusters(firstClusters, clusterMeans, emptyDroplets, badClusters, sum(dimensions), samTable)
     quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters, secondaryClusters$clusters)
     samResult <- c(emptyDroplets, firstClusters, secondaryClusters$clusters, quaternaryCluster)
     if (length(firstClusters) == numOfMarkers) {
-      names <- c("1","2","3","1+2","1+3","2+3","1+2+3","Empties","Removed","Total", "Runtime")
+      names <- c("1","2","3","1+2","1+3","2+3","1+2+3","Empties","Removed","Total")
     } else {
       missingCluster <- findDeletion(clusterMeans, firstClusters, emptyDroplets, numOfMarkers-length(firstClusters), dimensions)
-      names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total", "Runtime")
+      names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
       pos <- grep(missingCluster, names)
       for (foo in pos) {
         newsamResult <- c(samResult, 0)
@@ -304,7 +298,7 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
     tertiaryClusters <- findTertiaryClusters(emptyDroplets, firstClusters, secondaryClusters$clusters, badClusters, clusterMeans, secondaryClusters$correctionFactor, sum(dimensions), samTable)
     quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters)
     samResult <- c(emptyDroplets, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters, quaternaryCluster)
-    names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total", "Runtime")
+    names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
     
   }
   samRes <- mergeClusters(samRes, clusterMeans, samResult, badClusters)
@@ -330,8 +324,8 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
     finalSamRes[removed] <- 2^numOfMarkers+1
   }
   
-  samTime <- signif((proc.time() - samTime)[3], digits=4)
-  samCount <- c(clusterCount, length(removed), length(file[,1]), samTime)
+
+  samCount <- c(clusterCount, length(removed), length(file[,1]))
   names(samCount) = names
   result <- cbind(data, "Cluster" = finalSamRes)
   return(list(data=result, counts=samCount, firstClusters=firstClusters, partition=as.cl_partition(finalSamRes)))
@@ -370,14 +364,12 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
   threshold <<- 0.1/sensitivity^2
   # *************************
   
-  fPeaksTime <- proc.time()
-  
   data_dir <- system.file("extdata", package = "flowDensity")
   load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
   
   f@exprs <- as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
-  #file <- file[,c(2,1)] # switch axis to be consistent
   
+  #### Start of algorithm ####
   fPeaksRes <- flowPeaks(file, tol=0, h0=(0.3/sensitivity^1.5), h=(0.4/sensitivity^1.5))
   data <- file
   clusterMeans <- fPeaksRes$peaks$mu
@@ -393,23 +385,23 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
   firstClusters <- findPrimaryClusters(fPeaksRes$peaks.cluster, clusterMeans, emptyDroplets, badClusters, dimensions, file, f, numOfMarkers)
   if(length(firstClusters) == 1) {
     fPeaksResult <- c(emptyDroplets, firstClusters)
-    names <- c("1","Empties","Removed","Total", "Runtime")
+    names <- c("1","Empties","Removed","Total")
   } else
     if(length(firstClusters) == 2) {
       quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters)
       fPeaksResult <- c(emptyDroplets, firstClusters, quaternaryCluster)
-      names <- c("1","2","1+2","Empties","Removed","Total", "Runtime")
+      names <- c("1","2","1+2","Empties","Removed","Total")
     } else
       if(length(firstClusters) == 3) {
         secondaryClusters <- findSecondaryClusters(firstClusters, clusterMeans, emptyDroplets, badClusters, sum(dimensions), fPeaksTable)
         quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters, secondaryClusters$clusters)
         fPeaksResult <- c(emptyDroplets, firstClusters, secondaryClusters$clusters, quaternaryCluster)
         if (length(firstClusters) == numOfMarkers) {
-          names <- c("1","2","3","1+2","1+3","2+3","1+2+3","Empties","Removed","Total", "Runtime")
+          names <- c("1","2","3","1+2","1+3","2+3","1+2+3","Empties","Removed","Total")
         } else {
           missingCluster <- findDeletion(clusterMeans, firstClusters, emptyDroplets, numOfMarkers-length(firstClusters), dimensions)
           # firstClusters <- append(firstClusters, 0, after=missingCluster-1)
-          names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total", "Runtime")
+          names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
           pos <- grep(missingCluster, names)
           for (foo in pos) {
             newfPeaksResult <- c(fPeaksResult, 0)
@@ -423,7 +415,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
           tertiaryClusters <- findTertiaryClusters(emptyDroplets, firstClusters, secondaryClusters$clusters, badClusters, clusterMeans, secondaryClusters$correctionFactor, sum(dimensions), fPeaksTable)
           quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters)
           fPeaksResult <- c(emptyDroplets, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters, quaternaryCluster)
-          names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total", "Runtime")
+          names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
         }
   
   fPeaksRes$peaks.cluster <- mergeClusters(fPeaksRes$peaks.cluster, clusterMeans, fPeaksResult, badClusters)
@@ -447,8 +439,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
     finalPeaksRes[removed] <- 2^numOfMarkers+1
   }
   
-  fPeaksTime <- signif((proc.time() - fPeaksTime)[3], digits=4)
-  fPeaksCount <- c(clusterCount, length(removed), length(file[,1]), fPeaksTime)
+  fPeaksCount <- c(clusterCount, length(removed), length(file[,1]))
   names(fPeaksCount) = names
   result <- cbind(data, "Cluster" = finalPeaksRes)
   return(list(data=result, counts=fPeaksCount, firstClusters=firstClusters, partition=as.cl_partition(finalPeaksRes)))
@@ -459,6 +450,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
 #' This function takes the results of the clustering and calculates the actual counts per marker, as well as the counts per droplet (CPD) for each marker. 
 #'
 #' @param results The result of the dropClust algorithm.
+#' @param template A parsed dataframe containing the template.
 #' @return
 #' A list of lists, containing the counts for empty droplets, each marker with both total droplet count and CPD, and total number of droplets, for each element of the input list respectively. 
 #' @export
@@ -470,7 +462,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
 #' # Calculate the CPDs
 #' markerCPDs <- calculateCPDs(result$results)
 #'
-calculateCPDs <- function(results) {
+calculateCPDs <- function(results, template = NULL) {
   countedResult <- list()
 
   for (i in 1:length(results)) {
@@ -478,12 +470,17 @@ calculateCPDs <- function(results) {
     result <- results[[i]]$counts
     total <- sum(as.integer(result[grep('Total', names(result))]), na.rm = T)
     empties <- sum(as.integer(result[grep('Empties', names(result))]), na.rm = T)
-    countedResult[[id]][["Empties"]] <- empties
-    for (i in 1:4) {
-      counts <- sum(as.integer(result[grep(i, names(result))]), na.rm = T)
+    for (j in 1:4) {
+      counts <- sum(as.integer(result[grep(j, names(result))]), na.rm = T)
       cpd <- -log(1-counts/total)
-      countedResult[[id]][[paste0("M", i)]] <- list(counts=counts, cpd=cpd)
+      if (is.null(template)) {
+        marker <- paste0("M", j)
+      } else {
+        marker <- as.character(template[which(template[,1] == id), j+3])
+      }
+      countedResult[[id]][[marker]] <- list(counts=counts, cpd=cpd)
     }
+    countedResult[[id]][["Empties"]] <- empties
     countedResult[[id]][["Total"]] <- total
   }
   return(countedResult)
@@ -525,7 +522,6 @@ createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, numOfMarkers, 
   if (!is.null(peaks$partition)) {
     listResults <- c(listResults, list(peaks$partition))
   }
-  #file <- file[,c(2,1)] # switch axis to be consistent
   
   if (length(listResults) == 0) {
     next

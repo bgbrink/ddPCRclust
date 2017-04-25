@@ -32,10 +32,21 @@
 #' Else, a vector with length equal to \code{length(files)} should be provided, containing the number of markers used for the respective reaction.
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param template A csv file containing information about the individual ddPCR runs. An example template is provided with this package. For more information, please check the repository on github. 
+#' @param fast Run a simple version of the algorithm that is about 10x faster. For clean data, this can already deliver very good results. In any case useful to get a quick overview over the data.
 #' @return
-#' \item{data}{The original input data minus the removed events (for plotting)}
-#' \item{confidence}{The agreement between the different clustering results in percent. If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.}
-#' \item{counts}{The droplet count for each cluster.}
+#' \item{Results}{The results of the dropClust algorithm. It contains three fields: \cr
+#' \code{data} The original input data minus the removed events (for plotting) 
+#' \code{confidence} The agreement between the different clustering results in percent
+#' If all parts of the algorithm calculated the same result, the clustering is likely to be correct, thus the confidence is high\cr
+#' \code{counts} The droplet count for each cluster
+#' }
+#' \item{Annotations}{The metatdata provided in the header of the template. It contains four fields: \cr
+#' \code{Name} The name given to this ddPCR experiment \cr
+#' \code{Ch1} Color channel 1 (usually HEX) \cr
+#' \code{Ch2} Color channel 2 (usually FAM) \cr
+#' \code{Descriptions} Additional descriptions about this ddPCR experiment (e.g. date, exprimentor, etc.)
+#' }
+#' \item{Template}{A parsed dataframe containing the template, if one was provided.}
 #' @export
 #' @import parallel
 #' @examples
@@ -43,7 +54,7 @@
 #' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
 #' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 #'
-runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NULL) {
+runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NULL, fast = FALSE) {
   library(parallel)
   
   ids <- annotations <- vector()
@@ -81,23 +92,28 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
   } else {
     nrOfCores <- detectCores()
   }
-  
+  dens_result <- sam_result <- peaks_result <- rep(0, length(files))
+  names(dens_result) <- names(sam_result) <- names(peaks_result) <- ids
   if(length(files)>1) {
     csvFiles <- mclapply(files, read.csv, mc.cores = nrOfCores)
     names(csvFiles) <- ids
     dens_result <- mcmapply(dens_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F, mc.cores = nrOfCores)
-    sam_result <- mcmapply(sam_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F, mc.cores = nrOfCores)
-    peaks_result <- mcmapply(peaks_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F, mc.cores = nrOfCores)
+    if (!fast) {
+      sam_result <- mcmapply(sam_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F, mc.cores = nrOfCores)
+      peaks_result <- mcmapply(peaks_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F, mc.cores = nrOfCores)
+    }
     superResults <- mcmapply(ensemble_wrapper, dens_result, sam_result, peaks_result, numOfMarkers, csvFiles, SIMPLIFY = F, mc.cores = nrOfCores)
   } else {
     csvFiles <- read.csv(files)
     dens_result <- dens_wrapper(file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity)
-    sam_result <- sam_wrapper(file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity)
-    peaks_result <- peaks_wrapper(file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity)
+    if (!fast) {
+      sam_result <- sam_wrapper(file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity)
+      peaks_result <- peaks_wrapper(file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity)
+    }
     superResults <- list()
     superResults[[ids]] <- ensemble_wrapper(dens_result, sam_result, peaks_result, numOfMarkers, csvFiles)
   }
-  return(list(results=superResults, annotations=annotations))
+  return(list(Results=superResults, Annotations=annotations, Template=template))
 }
 
 
@@ -121,8 +137,8 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
 #'
 exportPlots <- function(data, directory, annotations) {
   library(ggplot2)
-  directory <- normalizePath(directory)
-  ifelse(!dir.exists(paste0(directory,"/", annotations[1])), dir.create(paste0(directory,"/",annotations[1])), FALSE)
+  directory <- normalizePath(directory, mustWork = T)
+  ifelse(!dir.exists(paste0(directory, annotations[1])), dir.create(paste0(directory,annotations[1])), FALSE)
   
   for (i in 1:length(data)) {
     id <- names(data[i])
@@ -277,6 +293,15 @@ peaks_wrapper <- function(file, sensitivity=1, numOfMarkers) {
 
 # wrapper function for exception handling in mcmapply
 ensemble_wrapper <- function(dens_result, sam_result, peaks_result, plex, csvFiles) {
+  if (is.numeric(dens_result)) {
+    dens_result <- NULL
+  }
+  if (is.numeric(sam_result)) {
+    sam_result <- NULL
+  }
+  if (is.numeric(peaks_result)) {
+    peaks_result <- NULL
+  }
   result <- tryCatch(createEnsemble(dens_result, sam_result, peaks_result, plex, csvFiles), error = function(e) {
     print(e)
   })
