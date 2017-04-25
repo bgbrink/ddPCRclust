@@ -1,5 +1,5 @@
 # dropClust
-##A package for automated quantification of multiplexed ddPCR data.
+## A package for automated quantification of multiplexed ddPCR data.
 
 The dropClust algorithm is used to automatically quantify the events of a multiplexed ddPCR reaction.
 In order to determine the correct droplet count for each marker, it is crucial to both identify all clusters and label them correctly based on their position.
