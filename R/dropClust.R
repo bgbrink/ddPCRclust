@@ -1,3 +1,21 @@
+# ##############################   dropClust   ################################# #  
+# Copyright (C) 2017  Benedikt G. Brink, Bielefeld University                    #
+#                                                                                #
+# This program is free software; you can redistribute it and/or                  #
+# modify it under the terms of the GNU General Public License                    #
+# as published by the Free Software Foundation; either version 2                 #
+# of the License, or (at your option) any later version.                         #
+#                                                                                #
+# This program is distributed in the hope that it will be useful,                #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of                 #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the                   #
+# GNU General Public License for more details.                                   #
+#                                                                                #
+# You should have received a copy of the GNU General Public License              #
+# along with this program; if not, write to the Free Software                    #
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA. #
+# ############################################################################## #
+
 #' dropClust 
 #' A package for automated quantification of multiplexed ddPCR data
 #'
@@ -133,7 +151,7 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
 #' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 #' 
 #' # Plot the results
-#' exportPlots(data = result$results, directory = "./Results/", annotations = result$annotations)
+#' exportPlots(data = result$Results, directory = "./Results/", annotations = result$Annotations)
 #'
 exportPlots <- function(data, directory, annotations) {
   library(ggplot2)
@@ -173,18 +191,18 @@ exportPlots <- function(data, directory, annotations) {
 #' @param raw Boolean which determines if the annotated raw data should be exported along with the final counts. Basically, a third column will be added to the original data, which contains the cluster number to which this point was assigned to.
 #' Useful for example to visualize the clustering later on. (Warning: this can take a while!)
 #' @export
-#' @import xlsx
+#' @import openxlsx
 #' @examples
 #' # Run dropClust
 #' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
 #' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 #' 
 #' # Export the results
-#' exportToExcel(data = result$results, directory = "./Results/", annotations = result$annotations)
+#' exportToExcel(data = result$Results, directory = "./Results/", annotations = result$Annotations)
 #'
-exportToExcel <- function(data, directory, annotations, raw = F) {
-  library(xlsx)
-  directory <- normalizePath(directory)
+exportToExcel <- function(data, directory, annotations, raw = FALSE) {
+  library(openxlsx)
+  directory <- normalizePath(directory, mustWork = T)
   ifelse(!dir.exists(paste0(directory,"/", annotations[1])), dir.create(paste0(directory,"/",annotations[1])), FALSE)
   dataToWrite <- NULL
   for (i in 1:length(data)) {
@@ -214,7 +232,7 @@ exportToExcel <- function(data, directory, annotations, raw = F) {
   dataToWrite <- t(dataToWrite[,match(mynames, colnames(dataToWrite))])
   colnames(dataToWrite) <- names(data)
   file <- paste0(directory,"/",annotations[1],"/", annotations[1], "_results.xlsx")
-  write.xlsx(dataToWrite, file = file)
+  write.xlsx(dataToWrite, file = file, colNames = T, rowNames = T)
 }
 
 #' Export the algorithms results to a csv file
@@ -234,10 +252,10 @@ exportToExcel <- function(data, directory, annotations, raw = F) {
 #' result <- runDropClust(exampleFiles)
 #' 
 #' # Export the results
-#' exportToCSV(data = result$results, directory = "./Results/", annotations = result$annotations)
+#' exportToCSV(data = result$Results, directory = "./Results/", annotations = result$Annotations)
 #'
-exportToCSV <- function(data, directory, annotations, raw = F) {
-  directory <- normalizePath(directory)
+exportToCSV <- function(data, directory, annotations, raw = FALSE) {
+  directory <- normalizePath(directory, mustWork = T)
   ifelse(!dir.exists(paste0(directory,"/", annotations[1])), dir.create(paste0(directory,"/",annotations[1])), FALSE)
   dataToWrite <- NULL
   for (i in 1:length(data)) {
@@ -259,14 +277,14 @@ exportToCSV <- function(data, directory, annotations, raw = F) {
       dataToWrite <- rbind(dataToWrite, tmp[match(colnames(dataToWrite), colnames(tmp))])
     }
     if (raw) {
-      file <- paste0(directory,"/",annotations[1],"/", id, "_annotated_raw.xlsx")
+      file <- paste0(directory,"/",annotations[1],"/", id, "_annotated_raw.csv")
       write.csv(result$data, file = file)
     }
   }
   mynames <- c("Empties","1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Removed","Total","Confidence")
   dataToWrite <- t(dataToWrite[,match(mynames, colnames(dataToWrite))])
   colnames(dataToWrite) <- names(data)
-  file <- paste0(directory,"/",annotations[1],"/", annotations[1], "_results.xlsx")
+  file <- paste0(directory,"/",annotations[1],"/", annotations[1], "_results.csv")
   write.csv(dataToWrite, file = file)
 }
 

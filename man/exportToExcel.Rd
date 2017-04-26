@@ -4,7 +4,7 @@
 \alias{exportToExcel}
 \title{Export the algorithms results to an Excel file}
 \usage{
-exportToExcel(data, directory, annotations, raw = F)
+exportToExcel(data, directory, annotations, raw = FALSE)
 }
 \arguments{
 \item{data}{The result of the dropClust algorithm}

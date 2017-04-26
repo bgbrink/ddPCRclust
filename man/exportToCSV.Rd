@@ -4,7 +4,7 @@
 \alias{exportToCSV}
 \title{Export the algorithms results to a csv file}
 \usage{
-exportToCSV(data, directory, annotations, raw = F)
+exportToCSV(data, directory, annotations, raw = FALSE)
 }
 \arguments{
 \item{data}{The result of the dropClust algorithm}

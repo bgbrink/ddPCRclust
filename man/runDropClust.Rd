@@ -5,7 +5,7 @@
 \title{Run the dropClust algorithm}
 \usage{
 runDropClust(files, numOfMarkers = 4, sensitivity = 1, template = NULL,
-  fast = F)
+  fast = FALSE)
 }
 \arguments{
 \item{files}{The input file(s). More specifically, csv files with two dimensions, each dimension representing one color choannel of the ddPCR reaction.}
@@ -17,7 +17,7 @@ Else, a vector with length equal to \code{length(files)} should be provided, con
 
 \item{template}{A csv file containing information about the individual ddPCR runs. An example template is provided with this package. For more information, please check the repository on github.}
 
-\item{fast}{Run a simple version of the algorithm that is about 10x faster. For very clean data, this can already deliver good results. In any case useful to get a quick overview over the data.}
+\item{fast}{Run a simple version of the algorithm that is about 10x faster. For clean data, this can already deliver very good results. In any case useful to get a quick overview over the data.}
 }
 \value{
 \item{Results}{The results of the dropClust algorithm. It contains three fields: \cr

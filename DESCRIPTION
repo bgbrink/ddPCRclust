@@ -1,6 +1,6 @@
 Package: dropClust
 Title: Clustering algorithms for ddPCR data
-Version: 0.9.1
+Version: 0.9.2
 Date: 2017-04-26
 Authors@R: c(person("Benedikt G.", "Brink", email = "bbrink@cebitec.uni-bielefeld.de", role = c("aut", "cre")), person("Justin", "Meskas", email = "jmeskas@bccrc.ca", role = "ctb"), person("Ryan R.", "Brinkman", email = "rbrinkman@bccrc.ca", role = "ctb"))
 Description: The dropClust algorithm can automatically quantify the events of ddPCR reaction with up to four markers. In order to determine the correct droplet count for each marker, it is crucial to both identify all clusters and label them correctly based on their position. For more information on what data can be analyzed and how a template needs to be formatted, please check the project repository on github.
@@ -12,7 +12,7 @@ Imports:
     clue,
     parallel,
     ggplot2,
-    xlsx,
+    openxlsx,
     flowDensity,
     SamSPECTRAL,
     flowPeaks
