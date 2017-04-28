@@ -4,7 +4,7 @@
 \alias{createEnsemble}
 \title{Create a cluster ensemble.}
 \usage{
-createEnsemble(dens = NULL, sam = NULL, peaks = NULL, numOfMarkers, file)
+createEnsemble(dens = NULL, sam = NULL, peaks = NULL, file)
 }
 \arguments{
 \item{dens}{The result of the flowDensity algorithm as a CLUE partition.}
@@ -12,8 +12,6 @@ createEnsemble(dens = NULL, sam = NULL, peaks = NULL, numOfMarkers, file)
 \item{sam}{The result of the samSPECTRAL algorithm as a CLUE partition.}
 
 \item{peaks}{The result of the flowPeaks algorithm as a CLUE partition.}
-
-\item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up.}
 
 \item{file}{The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color.}
 }
@@ -32,6 +30,6 @@ densResult <- runDensity(file = file, numOfMarkers = 4)
 samResult <- runSam(file = file, numOfMarkers = 4)
 peaksResult <- runPeaks(file = file, numOfMarkers = 4)
 
-superResult <- createEnsemble(densResult, samResult, peaksResult, 4, file)
+superResult <- createEnsemble(densResult, samResult, peaksResult, file)
 
 }

@@ -52,19 +52,19 @@
 #' @param template A csv file containing information about the individual ddPCR runs. An example template is provided with this package. For more information, please check the repository on github. 
 #' @param fast Run a simple version of the algorithm that is about 10x faster. For clean data, this can already deliver very good results. In any case useful to get a quick overview over the data.
 #' @return
-#' \item{Results}{The results of the dropClust algorithm. It contains three fields: \cr
+#' \item{results}{The results of the dropClust algorithm. It contains three fields: \cr
 #' \code{data} The original input data minus the removed events (for plotting) 
 #' \code{confidence} The agreement between the different clustering results in percent
 #' If all parts of the algorithm calculated the same result, the clustering is likely to be correct, thus the confidence is high\cr
 #' \code{counts} The droplet count for each cluster
 #' }
-#' \item{Annotations}{The metatdata provided in the header of the template. It contains four fields: \cr
+#' \item{annotations}{The metatdata provided in the header of the template. It contains four fields: \cr
 #' \code{Name} The name given to this ddPCR experiment \cr
 #' \code{Ch1} Color channel 1 (usually HEX) \cr
 #' \code{Ch2} Color channel 2 (usually FAM) \cr
-#' \code{Descriptions} Additional descriptions about this ddPCR experiment (e.g. date, exprimentor, etc.)
+#' \code{descriptions} Additional descriptions about this ddPCR experiment (e.g. date, exprimentor, etc.)
 #' }
-#' \item{Template}{A parsed dataframe containing the template, if one was provided.}
+#' \item{template}{A parsed dataframe containing the template, if one was provided.}
 #' @export
 #' @import parallel
 #' @examples
@@ -99,7 +99,8 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
       }
       template <- read.csv(template, skip = 1)
       ids <- unlist(lapply(files, function(x) {grep("^[[:upper:]][[:digit:]][[:digit:]]$", unlist(strsplit(x, "_")), value = T)}))
-      numOfMarkers <- sapply(ids, function(x) {as.numeric(as.character(template[which(template[,1] == x), 3]))})
+      numOfMarkers <- lapply(ids, function(x) {unlist(template[which(template[,1] == x), 3])})
+      markerNames <- lapply(ids, function(x) {unlist(template[which(template[,1] == x), 4:7])})
     } else {
       stop(paste("Invalid Template file! This file starts with:\n", substr(header, start = 1, stop = 10)))
     }
@@ -115,23 +116,23 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
   if(length(files)>1) {
     csvFiles <- mclapply(files, read.csv, mc.cores = nrOfCores)
     names(csvFiles) <- ids
-    dens_result <- mcmapply(dens_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F, mc.cores = nrOfCores)
+    dens_result <- mcmapply(dens_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, markerNames=markerNames, SIMPLIFY = F, mc.cores = nrOfCores)
     if (!fast) {
-      sam_result <- mcmapply(sam_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F, mc.cores = nrOfCores)
-      peaks_result <- mcmapply(peaks_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, SIMPLIFY = F, mc.cores = nrOfCores)
+      sam_result <- mcmapply(sam_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, markerNames=markerNames, SIMPLIFY = F, mc.cores = nrOfCores)
+      peaks_result <- mcmapply(peaks_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, markerNames=markerNames, SIMPLIFY = F, mc.cores = nrOfCores)
     }
-    superResults <- mcmapply(ensemble_wrapper, dens_result, sam_result, peaks_result, numOfMarkers, csvFiles, SIMPLIFY = F, mc.cores = nrOfCores)
+    superResults <- mcmapply(ensemble_wrapper, dens_result, sam_result, peaks_result, csvFiles, SIMPLIFY = F, mc.cores = nrOfCores)
   } else {
     csvFiles <- read.csv(files)
-    dens_result <- dens_wrapper(file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity)
+    dens_result <- dens_wrapper(file=csvFiles, numOfMarkers=numOfMarkers[[1]], sensitivity=sensitivity, markerNames = markerNames[[1]])
     if (!fast) {
-      sam_result <- sam_wrapper(file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity)
-      peaks_result <- peaks_wrapper(file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity)
+      sam_result <- sam_wrapper(file=csvFiles, numOfMarkers=numOfMarkers[[1]], sensitivity=sensitivity, markerNames = markerNames[[1]])
+      peaks_result <- peaks_wrapper(file=csvFiles, numOfMarkers=numOfMarkers[[1]], sensitivity=sensitivity, markerNames = markerNames[[1]])
     }
     superResults <- list()
-    superResults[[ids]] <- ensemble_wrapper(dens_result, sam_result, peaks_result, numOfMarkers, csvFiles)
+    superResults[[ids]] <- ensemble_wrapper(dens_result, sam_result, peaks_result, csvFiles)
   }
-  return(list(Results=superResults, Annotations=annotations, Template=template))
+  return(list(results=superResults, annotations=annotations, template=template))
 }
 
 
@@ -151,7 +152,7 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
 #' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 #' 
 #' # Plot the results
-#' exportPlots(data = result$Results, directory = "./Results/", annotations = result$Annotations)
+#' exportPlots(data = result$results, directory = "./Results/", annotations = result$annotations)
 #'
 exportPlots <- function(data, directory, annotations) {
   library(ggplot2)
@@ -198,7 +199,7 @@ exportPlots <- function(data, directory, annotations) {
 #' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 #' 
 #' # Export the results
-#' exportToExcel(data = result$Results, directory = "./Results/", annotations = result$Annotations)
+#' exportToExcel(data = result$results, directory = "./Results/", annotations = result$annotations)
 #'
 exportToExcel <- function(data, directory, annotations, raw = FALSE) {
   library(openxlsx)
@@ -252,7 +253,7 @@ exportToExcel <- function(data, directory, annotations, raw = FALSE) {
 #' result <- runDropClust(exampleFiles)
 #' 
 #' # Export the results
-#' exportToCSV(data = result$Results, directory = "./Results/", annotations = result$Annotations)
+#' exportToCSV(data = result$results, directory = "./Results/", annotations = result$annotations)
 #'
 exportToCSV <- function(data, directory, annotations, raw = FALSE) {
   directory <- normalizePath(directory, mustWork = T)
@@ -289,28 +290,31 @@ exportToCSV <- function(data, directory, annotations, raw = FALSE) {
 }
 
 # wrapper function for exception handling in mcmapply
-dens_wrapper <- function(file, sensitivity=1, numOfMarkers) {
-  result <- tryCatch(runDensity(file, sensitivity, numOfMarkers), error = function(e) {
+dens_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
+  missingClusters <- which(markerNames == "")
+  result <- tryCatch(runDensity(file, sensitivity, numOfMarkers, missingClusters), error = function(e) {
     print(e)
   })
 }
 
 # wrapper function for exception handling in mcmapply
-sam_wrapper <- function(file, sensitivity=1, numOfMarkers) {
-  result <- tryCatch(runSam(file, sensitivity, numOfMarkers), error = function(e) {
+sam_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
+  missingClusters <- which(markerNames == "")
+  result <- tryCatch(runSam(file, sensitivity, numOfMarkers, missingClusters), error = function(e) {
     print(e)
   })
 }
 
 # wrapper function for exception handling in mcmapply
-peaks_wrapper <- function(file, sensitivity=1, numOfMarkers) {
-  result <- tryCatch(runPeaks(file, sensitivity, numOfMarkers), error = function(e) {
+peaks_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
+  missingClusters <- which(markerNames == "")
+  result <- tryCatch(runPeaks(file, sensitivity, numOfMarkers, missingClusters), error = function(e) {
     print(e)
   })
 }
 
 # wrapper function for exception handling in mcmapply
-ensemble_wrapper <- function(dens_result, sam_result, peaks_result, plex, csvFiles) {
+ensemble_wrapper <- function(dens_result, sam_result, peaks_result, csvFiles) {
   if (is.numeric(dens_result)) {
     dens_result <- NULL
   }
@@ -320,7 +324,7 @@ ensemble_wrapper <- function(dens_result, sam_result, peaks_result, plex, csvFil
   if (is.numeric(peaks_result)) {
     peaks_result <- NULL
   }
-  result <- tryCatch(createEnsemble(dens_result, sam_result, peaks_result, plex, csvFiles), error = function(e) {
+  result <- tryCatch(createEnsemble(dens_result, sam_result, peaks_result, csvFiles), error = function(e) {
     print(e)
   })
 }

@@ -603,17 +603,17 @@ findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dim
   selection <- selection[(dataTable[selection] > max(dataTable[selection])/4)]
   realFirstCluster2 <- selection[which.max(clusterMeans[selection, 1])]
   
-  #   if (dataTable[realFirstCluster2] < dataTable[realFirstCluster1]/4) {
-  #     warning("Something wrong with initial cluster detection, to few events for Ch1 amplitude, try again...")
-  #     remove <- c(remove, collinear2)
-  #     return(findPrimaryClustersDensity(data, clusterMeans, emptyDroplets, remove, dimensions, File, f))
-  #   }
-  #   
-  #   if (dataTable[realFirstCluster1] < dataTable[realFirstCluster2]/4) {
-  #     warning("Something wrong with initial cluster detection, to few events for Ch1 amplitude, try again....")
-  #     remove <- c(remove, collinear1)
-  #     return(findPrimaryClustersDensity(data, clusterMeans, emptyDroplets, remove, dimensions, File, f))
-  #   }
+  if (dataTable[realFirstCluster2] < dataTable[realFirstCluster1]/10) {
+    cat(paste("Something wrong with primary cluster detection (Ch2: only", dataTable[realFirstCluster2], "droplets). Trying again..."))
+    remove <- c(remove, collinear2)
+    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, dimensions, File, f, NumberOfSinglePos))
+  }
+
+  if (dataTable[realFirstCluster1] < dataTable[realFirstCluster2]/10) {
+    cat(paste("Something wrong with primary cluster detection (Ch1: only", dataTable[realFirstCluster1], "droplets). Trying again..."))
+    remove <- c(remove, collinear1)
+    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, dimensions, File, f, NumberOfSinglePos))
+  }
   
   x_leftPrim <- clusterMeans[realFirstCluster1,1]
   y_leftPrim <- clusterMeans[realFirstCluster1,2]
@@ -1033,23 +1033,6 @@ mergeClusters <- function(result, clusterMeans, finalResult, remove, p = 12) {
     }
   }
   return(result)
-}
-
-# Find missing clusters (caused by genomic deletions) based on their positions.
-findDeletion <- function(clusterMeans, firstClusters, emptyDroplets, numberOfDeletions, dimensions) {
-  if (numberOfDeletions == 1){
-    if (abs(clusterMeans[firstClusters[1],1] - clusterMeans[emptyDroplets,1]) > dimensions[2]/10) {
-      return(1)
-    } else if (abs(clusterMeans[firstClusters[3],2] - clusterMeans[emptyDroplets,2]) > dimensions[1]/10) {
-      return(4)
-    } else {
-      a <- sum(abs(clusterMeans[firstClusters[1],] - clusterMeans[firstClusters[2],]))
-      b <- sum(abs(clusterMeans[firstClusters[2],] - clusterMeans[firstClusters[3],]))
-      if (a>b) return(2) else return(3)
-    }
-  } else {
-    ##TODO
-  }
 }
 
 # Adjust the cluster centres based on the local density function

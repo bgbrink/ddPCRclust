@@ -4,7 +4,7 @@
 \alias{runSam}
 \title{Find the clusters using SamSPECTRAL}
 \usage{
-runSam(file, sensitivity = 1, numOfMarkers)
+runSam(file, sensitivity = 1, numOfMarkers, missingClusters = NULL)
 }
 \arguments{
 \item{file}{The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.}
@@ -12,6 +12,8 @@ runSam(file, sensitivity = 1, numOfMarkers)
 \item{sensitivity}{An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
 
 \item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up.}
+
+\item{missingClusters}{A vector containing the number of primary clusters, which are missing in this dataset according to the template.}
 }
 \value{
 \item{data}{The original input data minus the removed events (for plotting)}

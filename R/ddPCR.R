@@ -22,6 +22,7 @@ library(clue)
 #' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
+#' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -38,7 +39,7 @@ library(clue)
 #' p <- p+geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)+ggtitle("flowDensity example")+theme_bw()+theme(legend.position="none")
 #' p
 #' 
-runDensity <- function(file, sensitivity=1, numOfMarkers) {
+runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) {
   
   # ****** Parameters *******
   scalingParam <<- c(max(file[,1])/25, max(file[,2])/25)
@@ -152,6 +153,34 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
     posOfFourth <- max((tail(posOfFirsts, 1)+1), (tail(posOfSeconds, 1)+1), (tail(posOfThirds, 1)+1), na.rm = T)
     ClusterCentres <- rbind(ClusterCentres, abs(quadCluster$clusters))
   }
+
+  angles <- sapply(1:nrow(firstClusters$clusters), function(x) return(atan2(firstClusters$clusters[x,2]-emptyDroplets[2], firstClusters$clusters[x,1]-emptyDroplets[1])))
+  cuts <- c(0, 0.5*pi/4, 1.5*pi/4, pi/2)
+  for (i in missingClusters) {
+    angles <- c(angles, cuts[i])
+  }
+  distMatrix <- t(sapply(1:length(angles), function(x) return(abs(angles[x]-cuts))))
+  order <- solve_LSAP(distMatrix)
+  deletions <- which(!1:4 %in% order)
+  deletions <- deletions[!deletions %in% missingClusters]
+  order <- order[1:nrow(firstClusters$clusters)]
+  names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
+  indices <- vector()
+  for (cl in missingClusters) {
+    indices <- c(indices, grep(cl, names))
+  }
+  if (length(indices) > 0) names <- names[-indices]
+  indices <- vector()
+  for (cl in order) {
+    indices <- c(indices, grep(cl, names))
+  }
+  indices <- sort(unique(indices))
+  rem_indices <- vector()
+  for (cl in deletions) {
+    rem_indices <- c(rem_indices, grep(cl, names))
+  }
+  indices <- c(1, indices[!indices %in% rem_indices]+1)
+  
   
   result <- rep(0, nrow(f))
   newData <- f@exprs
@@ -174,23 +203,19 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
   
   fDensResult <- assignRain(clusterMeans = ClusterCentresNew, data = f@exprs, result = result, emptyDroplets = 1, firstClusters = posOfFirsts, secondClusters = posOfSeconds, thirdClusters = posOfThirds, fourthCluster = posOfFourth, flowDensity = T)
   
-  if (NumberOfSinglePos == 1) {
-    names <- c("1","Empties","Removed","Total")
-  } else if (NumberOfSinglePos == 2) {
-    names <- c("1","2","1+2","Empties","Removed","Total")
-  } else if (NumberOfSinglePos == 3) {
-    names <- c("1","2","3","1+2","1+3","2+3","1+2+3","Empties","Removed","Total")
-  } else if (NumberOfSinglePos == 4) {
+  
+  if (NumberOfSinglePos < 4) {
+    tempResult <- fDensResult$result
+    for (i in 1:nrow(ClusterCentres)) {
+      fDensResult$result[which(tempResult == i)] <- indices[i]
+    }
+  } else {
     tempResult <- fDensResult$result
     fDensResult$result[which(tempResult == 8)] <- 9
     fDensResult$result[which(tempResult == 9)] <- 8
-    names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
   }
   
-  NumOfEventsClust <- matrix(0,NumOfClusters,1)
-  for ( t1 in 1:NumOfClusters) {
-    NumOfEventsClust[t1] <- length(which(fDensResult$result == t1 ))
-  }
+  NumOfEventsClust <- table(c(fDensResult$result, 1:(length(names)-2)))-1
   
   NumOfEventsClust <- c(NumOfEventsClust[2:length(NumOfEventsClust)],NumOfEventsClust[1],length(fDensResult$remove))
   
@@ -206,10 +231,11 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
   #     }
   
   if ( length(fDensResult$removed) > 0 ) {
-    fDensResult$result[fDensResult$remove] <- NumOfClusters+1# remove the removed ones
+    fDensResult$result[fDensResult$remove] <- length(names)-1 # remove the removed ones
   }
   result <- cbind(file, "Cluster" = fDensResult$result)
-  return(list(data=result, counts=NumOfEventsClust, firstClusters=firstClusters$clusters, partition=as.cl_partition(fDensResult$result)))
+  partition <- as.cl_partition(c(fDensResult$result, 1:(length(names)-1)))
+  return(list(data=result, counts=NumOfEventsClust, firstClusters=firstClusters$clusters, partition=partition))
 }
 
 
@@ -220,6 +246,7 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
 #' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
+#' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -237,7 +264,7 @@ runDensity <- function(file, sensitivity=1, numOfMarkers) {
 #' p <- p+geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)+ggtitle("SamSPECTRAL example")+theme_bw()+theme(legend.position="none")
 #' p
 #' 
-runSam <- function(file, sensitivity = 1, numOfMarkers) {
+runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) {
   
   # ****** Parameters *******
   scalingParam <<- c(max(file[,1])/25, max(file[,2])/25)
@@ -263,72 +290,89 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
   temp <- sapply(min(samRes, na.rm = T):max(samRes, na.rm = T), function(x) return(abs(var(data[samRes==x,1], data[samRes==x,2], na.rm = T))))
   badClusters <- match(temp[temp>sum(dimensions)*25], temp)
   samTable <- table(samRes)
-  #firstClusters <- findPrimaryClusters(samRes, clusterMeans, rowSums, emptyDroplets, badClusters, dimensions)
-  missingCluster <- 0
   secondaryClusters <- tertiaryClusters <- quaternaryCluster <- NULL
   firstClusters <- findPrimaryClusters(samRes, clusterMeans, emptyDroplets, badClusters, dimensions, file, f, numOfMarkers)
+  ## estimate missing clusters based on angle:
+  angles <- sapply(1:length(firstClusters), function(x) return(atan2(clusterMeans[firstClusters[x],2]-clusterMeans[emptyDroplets,2], clusterMeans[firstClusters[x],1]-clusterMeans[emptyDroplets,1])))
+  cuts <- c(0, 0.5*pi/4, 1.5*pi/4, pi/2)
+  for (i in missingClusters) {
+    angles <- c(angles, cuts[i])
+  }
+  distMatrix <- t(sapply(1:length(angles), function(x) return(abs(angles[x]-cuts))))
+  order <- solve_LSAP(distMatrix)
+  deletions <- which(!1:4 %in% order)
+  deletions <- deletions[!deletions %in% missingClusters]
+  order <- order[1:length(firstClusters)]
+  names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
+  indices <- vector()
+  for (cl in missingClusters) {
+    indices <- c(indices, grep(cl, names))
+  }
+  if (length(indices) > 0) names <- names[-indices]
+  indices <- vector()
+  for (cl in order) {
+    indices <- c(indices, grep(cl, names))
+  }
+  indices <- sort(unique(indices))
+  rem_indices <- vector()
+  for (cl in deletions) {
+    rem_indices <- c(rem_indices, grep(cl, names))
+  }
+  indices <- c(1, indices[!indices %in% rem_indices]+1)
+  
   if(length(firstClusters) == 1) {
     samResult <- c(emptyDroplets, firstClusters)
-    names <- c("1","Empties","Removed","Total")
   }
   if(length(firstClusters) == 2) {
     quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters)
     samResult <- c(emptyDroplets, firstClusters, quaternaryCluster)
-    names <- c("1","2","1+2","Empties","Removed","Total")
   }
   if(length(firstClusters) == 3) {
     secondaryClusters <- findSecondaryClusters(firstClusters, clusterMeans, emptyDroplets, badClusters, sum(dimensions), samTable)
     quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters, secondaryClusters$clusters)
     samResult <- c(emptyDroplets, firstClusters, secondaryClusters$clusters, quaternaryCluster)
-    if (length(firstClusters) == numOfMarkers) {
-      names <- c("1","2","3","1+2","1+3","2+3","1+2+3","Empties","Removed","Total")
-    } else {
-      missingCluster <- findDeletion(clusterMeans, firstClusters, emptyDroplets, numOfMarkers-length(firstClusters), dimensions)
-      names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
-      pos <- grep(missingCluster, names)
-      for (foo in pos) {
-        newsamResult <- c(samResult, 0)
-        id  <- c( seq_along(samResult), foo-0.5 )
-        samResult <- newsamResult[order(id)]
-      }
-    }
+    # if (length(firstClusters) == numOfMarkers) {
+    #   names <- c("1","2","3","1+2","1+3","2+3","1+2+3","Empties","Removed","Total")
+    # } else {
+    #   missingCluster <- findDeletion(clusterMeans, firstClusters, emptyDroplets, numOfMarkers-length(firstClusters), dimensions)
+    #   names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
+    #   pos <- grep(missingCluster, names)
+    #   for (foo in pos) {
+    #     newsamResult <- c(samResult, 0)
+    #     id  <- c( seq_along(samResult), foo-0.5 )
+    #     samResult <- newsamResult[order(id)]
+    #   }
+    # }
   }
   if(length(firstClusters) == 4) {
     secondaryClusters <- findSecondaryClusters(firstClusters, clusterMeans, emptyDroplets, badClusters, sum(dimensions), samTable)
     tertiaryClusters <- findTertiaryClusters(emptyDroplets, firstClusters, secondaryClusters$clusters, badClusters, clusterMeans, secondaryClusters$correctionFactor, sum(dimensions), samTable)
     quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters)
     samResult <- c(emptyDroplets, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters, quaternaryCluster)
-    names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
-    
   }
   samRes <- mergeClusters(samRes, clusterMeans, samResult, badClusters)
   rain <- assignRain(clusterMeans, data, samRes, emptyDroplets, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters, quaternaryCluster, F)
   samRes <- rain$result
-  samTable <- table(samRes)
-  clusterCount <- samTable[as.character(samResult)]
-  clusterCount[which(is.na(clusterCount))] = 0
-  clusterCount <- c(clusterCount[2:length(clusterCount)], clusterCount[1])
-  
   firstClusters <- clusterMeans[firstClusters,]
-  if (missingCluster > 0) {
+  
+  for (missingCluster in deletions) {
     firstClusters <- insertRow(firstClusters, cbind(0,0), missingCluster)
   }
-  
   finalSamRes <- rep(0/0, length(samRes))
   for (i in 1:length(samResult)) {
-    finalSamRes[which(samRes == samResult[i])] <- i
+    finalSamRes[which(samRes == samResult[i])] <- indices[i]
   }
-  
+  clusterCount <- table(c(finalSamRes, 1:(length(names)-2)))-1
   removed <- which(is.nan(finalSamRes))
   if (length(removed) > 0) {
-    finalSamRes[removed] <- 2^numOfMarkers+1
+    finalSamRes[removed] <- length(names)-1
   }
   
-
-  samCount <- c(clusterCount, length(removed), length(file[,1]))
+  samCount <- c(clusterCount[2:length(clusterCount)], clusterCount[1], length(removed), length(file[,1]))
   names(samCount) = names
   result <- cbind(data, "Cluster" = finalSamRes)
-  return(list(data=result, counts=samCount, firstClusters=firstClusters, partition=as.cl_partition(finalSamRes)))
+  partition <- as.cl_partition(c(finalSamRes, 1:(length(names)-1)))
+  return(list(data=result, counts=samCount, firstClusters=firstClusters, partition=partition))
 }
 
 
@@ -339,6 +383,7 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
 #' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
+#' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -355,7 +400,7 @@ runSam <- function(file, sensitivity = 1, numOfMarkers) {
 #' p <- p+geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)+ggtitle("flowPeaks example")+theme_bw()+theme(legend.position="none")
 #' p
 #' 
-runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
+runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) {
   
   # ****** Parameters *******
   scalingParam <<- c(max(file[,1])/25, max(file[,2])/25)
@@ -379,70 +424,78 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers) {
   temp <- sapply(min(fPeaksRes$peaks.cluster, na.rm = T):max(fPeaksRes$peaks.cluster, na.rm = T), function(x) return(abs(var(data[fPeaksRes$peaks.cluster==x,1], data[fPeaksRes$peaks.cluster==x,2], na.rm = T))))
   badClusters <- match(temp[temp>sum(dimensions)*25], temp)
   fPeaksTable <- table(fPeaksRes$peaks.cluster)
-  #firstClusters <- findPrimaryClusters(fPeaksRes$peaks.cluster, clusterMeans, rowSums, emptyDroplets, badClusters, dimensions)
-  missingCluster <- 0
   secondaryClusters <- tertiaryClusters <- quaternaryCluster <- NULL
   firstClusters <- findPrimaryClusters(fPeaksRes$peaks.cluster, clusterMeans, emptyDroplets, badClusters, dimensions, file, f, numOfMarkers)
+  ## estimate missing clusters based on angle:
+  angles <- sapply(1:length(firstClusters), function(x) return(atan2(clusterMeans[firstClusters[x],2]-clusterMeans[emptyDroplets,2], clusterMeans[firstClusters[x],1]-clusterMeans[emptyDroplets,1])))
+  cuts <- c(0, 0.5*pi/4, 1.5*pi/4, pi/2)
+  for (i in missingClusters) {
+    angles <- c(angles, cuts[i])
+  }
+  distMatrix <- t(sapply(1:length(angles), function(x) return(abs(angles[x]-cuts))))
+  order <- solve_LSAP(distMatrix)
+  deletions <- which(!1:4 %in% order)
+  deletions <- deletions[!deletions %in% missingClusters]
+  order <- order[1:length(firstClusters)]
+  names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
+  indices <- vector()
+  for (cl in missingClusters) {
+    indices <- c(indices, grep(cl, names))
+  }
+  if (length(indices) > 0) names <- names[-indices]
+  indices <- vector()
+  for (cl in order) {
+    indices <- c(indices, grep(cl, names))
+  }
+  indices <- sort(unique(indices))
+  rem_indices <- vector()
+  for (cl in deletions) {
+    rem_indices <- c(rem_indices, grep(cl, names))
+  }
+  indices <- c(1, indices[!indices %in% rem_indices]+1)
+  
   if(length(firstClusters) == 1) {
     fPeaksResult <- c(emptyDroplets, firstClusters)
-    names <- c("1","Empties","Removed","Total")
   } else
     if(length(firstClusters) == 2) {
       quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters)
       fPeaksResult <- c(emptyDroplets, firstClusters, quaternaryCluster)
-      names <- c("1","2","1+2","Empties","Removed","Total")
     } else
       if(length(firstClusters) == 3) {
         secondaryClusters <- findSecondaryClusters(firstClusters, clusterMeans, emptyDroplets, badClusters, sum(dimensions), fPeaksTable)
         quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters, secondaryClusters$clusters)
         fPeaksResult <- c(emptyDroplets, firstClusters, secondaryClusters$clusters, quaternaryCluster)
-        if (length(firstClusters) == numOfMarkers) {
-          names <- c("1","2","3","1+2","1+3","2+3","1+2+3","Empties","Removed","Total")
-        } else {
-          missingCluster <- findDeletion(clusterMeans, firstClusters, emptyDroplets, numOfMarkers-length(firstClusters), dimensions)
-          # firstClusters <- append(firstClusters, 0, after=missingCluster-1)
-          names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
-          pos <- grep(missingCluster, names)
-          for (foo in pos) {
-            newfPeaksResult <- c(fPeaksResult, 0)
-            id  <- c( seq_along(fPeaksResult), foo-0.5 )
-            fPeaksResult <- newfPeaksResult[order(id)]
-          }
-        }
       } else
         if(length(firstClusters) == 4) {
           secondaryClusters <- findSecondaryClusters(firstClusters, clusterMeans, emptyDroplets, badClusters, sum(dimensions), fPeaksTable)
           tertiaryClusters <- findTertiaryClusters(emptyDroplets, firstClusters, secondaryClusters$clusters, badClusters, clusterMeans, secondaryClusters$correctionFactor, sum(dimensions), fPeaksTable)
           quaternaryCluster <- findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters)
           fPeaksResult <- c(emptyDroplets, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters, quaternaryCluster)
-          names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
         }
   
   fPeaksRes$peaks.cluster <- mergeClusters(fPeaksRes$peaks.cluster, clusterMeans, fPeaksResult, badClusters)
   rain <- assignRain(clusterMeans, data, fPeaksRes$peaks.cluster, emptyDroplets, firstClusters, secondaryClusters$clusters, tertiaryClusters$clusters, quaternaryCluster, F)
   fPeaksRes$peaks.cluster <- rain$result
-  fPeaksTable <- table(fPeaksRes$peaks.cluster)
-  clusterCount <- fPeaksTable[as.character(fPeaksResult)]
-  clusterCount[which(is.na(clusterCount))] = 0
-  clusterCount <- c(clusterCount[2:length(clusterCount)], clusterCount[1])
   firstClusters <- clusterMeans[firstClusters,]
   
-  if (missingCluster > 0) {
+  for (missingCluster in deletions) {
     firstClusters <- insertRow(firstClusters, cbind(0,0), missingCluster)
   }
   finalPeaksRes <- rep(0/0, length(fPeaksRes$peaks.cluster))
   for (i in 1:length(fPeaksResult)) {
-    finalPeaksRes[which(fPeaksRes$peaks.cluster == fPeaksResult[i])] <- i
+    finalPeaksRes[which(fPeaksRes$peaks.cluster == fPeaksResult[i])] <- indices[i]
   }
+  clusterCount <- table(c(finalPeaksRes, 1:(length(names)-2)))-1
   removed <- which(is.nan(finalPeaksRes))
   if (length(removed) > 0) {
-    finalPeaksRes[removed] <- 2^numOfMarkers+1
+    finalPeaksRes[removed] <- length(names)-1
   }
   
-  fPeaksCount <- c(clusterCount, length(removed), length(file[,1]))
+  fPeaksCount <- c(clusterCount[2:length(clusterCount)], clusterCount[1], length(removed), length(file[,1]))
   names(fPeaksCount) = names
   result <- cbind(data, "Cluster" = finalPeaksRes)
-  return(list(data=result, counts=fPeaksCount, firstClusters=firstClusters, partition=as.cl_partition(finalPeaksRes)))
+  partition <- as.cl_partition(c(finalPeaksRes, 1:(length(names)-1)))
+  return(list(data=result, counts=fPeaksCount, firstClusters=firstClusters, partition=partition))
 }
 
 #' Calculates the copies per droplet
@@ -468,15 +521,18 @@ calculateCPDs <- function(results, template = NULL) {
   for (i in 1:length(results)) {
     id <- names(results[i])
     result <- results[[i]]$counts
+    markers <- as.character(unlist(template[which(template[,1] == id), 4:7]))
     total <- sum(as.integer(result[grep('Total', names(result))]), na.rm = T)
     empties <- sum(as.integer(result[grep('Empties', names(result))]), na.rm = T)
     for (j in 1:4) {
-      counts <- sum(as.integer(result[grep(j, names(result))]), na.rm = T)
+      counts <- as.integer(result[grep(j, names(result))])
+      
+      counts <- sum(counts, na.rm = T)
       cpd <- -log(1-counts/total)
       if (is.null(template)) {
         marker <- paste0("M", j)
       } else {
-        marker <- as.character(template[which(template[,1] == id), j+3])
+        marker <- markers[j]
       }
       countedResult[[id]][[marker]] <- list(counts=counts, cpd=cpd)
     }
@@ -493,7 +549,6 @@ calculateCPDs <- function(results, template = NULL) {
 #' @param dens The result of the flowDensity algorithm as a CLUE partition.
 #' @param sam The result of the samSPECTRAL algorithm as a CLUE partition.
 #' @param peaks The result of the flowPeaks algorithm as a CLUE partition.
-#' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
@@ -508,18 +563,21 @@ calculateCPDs <- function(results, template = NULL) {
 #' samResult <- runSam(file = file, numOfMarkers = 4)
 #' peaksResult <- runPeaks(file = file, numOfMarkers = 4)
 #' 
-#' superResult <- createEnsemble(densResult, samResult, peaksResult, 4, file)
+#' superResult <- createEnsemble(densResult, samResult, peaksResult, file)
 #' 
-createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, numOfMarkers, file) {
+createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, file) {
 
   listResults <- list()
   if (!is.null(dens$partition)) {
+    names <- names(dens$counts)
     listResults <- c(listResults, list(dens$partition))
   }
   if (!is.null(sam$partition)) {
+    names <- names(sam$counts)
     listResults <- c(listResults, list(sam$partition))
   }  
   if (!is.null(peaks$partition)) {
+    names <- names(peaks$counts)
     listResults <- c(listResults, list(peaks$partition))
   }
   
@@ -534,20 +592,22 @@ createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, numOfMarkers, 
     comb <- cl_medoid(cens)
     comb_ids <- cl_class_ids(comb)
   }
-  temp_comb_ids <- comb_ids
-  for (i in 1:2^numOfMarkers+1) {
-    temp_comb_ids <- c(temp_comb_ids, i)
-  }
-  superCounts <- table(temp_comb_ids)-1
-  superCounts <- c(superCounts, sum(superCounts))
-  switch(as.character(numOfMarkers),
-         '1' = names(superCounts) <- c("Empties","1","Removed","Total"),
-         '2' = names(superCounts) <- c("Empties","1","2","1+2","Removed","Total"),
-         '3' = names(superCounts) <- c("Empties","1","2","3","1+2","1+3","2+3","1+2+3","Removed","Total"),
-         '4' = names(superCounts) <- c("Empties","1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Removed","Total"))
-  
-  comb_ids[comb_ids==2^numOfMarkers+1] <- 0/0
-  superResult <- cbind(file, "Cluster" = as.integer(comb_ids))
+
+  superCounts <- table(comb_ids)-1
+  superCounts <- c(superCounts[2:(length(superCounts)-1)], superCounts[1], superCounts[length(superCounts)], sum(superCounts))
+  names(superCounts) <- names
+  comb_ids[comb_ids==length(names)-1] <- 0/0
+  superResult <- cbind(file, "Cluster" = as.integer(comb_ids[1:nrow(file)]))
   return(list(data=superResult, confidence=conf, counts=superCounts))
 }
 
+
+shearCorrection <- function(counts, lengthControl, stableControl) {
+  controlRatios <- NULL
+  for (well in counts) {
+    markerPos = grep(paste0('^', lengthControl), names(well))
+    controlPos = grep(paste0('^', stableControl), names(well))
+    if (length(markerPos) == 0 || length(lengthControl) == 0 || well[[controlPos]]$cpd == 0) next
+    ratio <- log(well[[markerPos]]$cpd/well[[controlPos]]$cpd)
+  }
+}
