@@ -4,7 +4,7 @@
 \alias{exportPlots}
 \title{Plot the algorithms results with ggplot2}
 \usage{
-exportPlots(data, directory, annotations)
+exportPlots(data, directory, annotations, invert = FALSE)
 }
 \arguments{
 \item{data}{The result of the dropClust algorithm}
@@ -13,6 +13,8 @@ exportPlots(data, directory, annotations)
 
 \item{annotations}{Some basic metadata about the ddPCR reaction. If you provided \code{\link{runDropClust}} a template, this paramater can be filled with the corresponding field in the result. 
 Otherwise, you have to provide a character vector containing a name and the the color channels, e.g. \code{c(Name="ddPCR_01-04-2017", Ch1="HEX", Ch2="FAM")}}
+
+\item{invert}{Invert the axis, e.g. x = Ch2.Amplitude, y = Ch1.Amplitude}
 }
 \description{
 A convinience function that takes the results of the dropClust algorithm and plots them using the ggplot2 library and a custom colour palette.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/ddPCR.R
 \name{createEnsemble}
 \alias{createEnsemble}
-\title{Create a cluster ensemble.}
+\title{Create a cluster ensemble}
 \usage{
 createEnsemble(dens = NULL, sam = NULL, peaks = NULL, file)
 }

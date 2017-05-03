@@ -203,7 +203,7 @@ runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) 
   
   fDensResult <- assignRain(clusterMeans = ClusterCentresNew, data = f@exprs, result = result, emptyDroplets = 1, firstClusters = posOfFirsts, secondClusters = posOfSeconds, thirdClusters = posOfThirds, fourthCluster = posOfFourth, flowDensity = T)
   
-  
+  fDensResult$result[fDensResult$result == 0] <- 0/0
   if (NumberOfSinglePos < 4) {
     tempResult <- fDensResult$result
     for (i in 1:nrow(ClusterCentres)) {
@@ -215,23 +215,15 @@ runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) 
     fDensResult$result[which(tempResult == 9)] <- 8
   }
   
+  removed <- c(fDensResult$removed, which(is.nan(fDensResult$result)))
+  
   NumOfEventsClust <- table(c(fDensResult$result, 1:(length(names)-2)))-1
-  
-  NumOfEventsClust <- c(NumOfEventsClust[2:length(NumOfEventsClust)],NumOfEventsClust[1],length(fDensResult$remove))
-  
+  NumOfEventsClust <- c(NumOfEventsClust[2:length(NumOfEventsClust)],NumOfEventsClust[1],length(removed))
   NumOfEventsClust <- c(NumOfEventsClust, sum(NumOfEventsClust)) # add on total
-  #   NumOfEventsClust[c(7,8)] <- NumOfEventsClust[c(8,7)]
-  
   names(NumOfEventsClust) = names
   
-  #     newResult <- rep(0/0, length(result))
-  # 
-  #     for (i in 1:16) {
-  #       newResult[which(result == clusterOrder[i])] <- i
-  #     }
-  
-  if ( length(fDensResult$removed) > 0 ) {
-    fDensResult$result[fDensResult$remove] <- length(names)-1 # remove the removed ones
+  if (length(removed) > 0) {
+    fDensResult$result[removed] <- length(names)-1 # remove the removed ones
   }
   result <- cbind(file, "Cluster" = fDensResult$result)
   partition <- as.cl_partition(c(fDensResult$result, 1:(length(names)-1)))
@@ -363,7 +355,7 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) 
     finalSamRes[which(samRes == samResult[i])] <- indices[i]
   }
   clusterCount <- table(c(finalSamRes, 1:(length(names)-2)))-1
-  removed <- which(is.nan(finalSamRes))
+  removed <- c(rain$removed, which(is.nan(finalSamRes)))
   if (length(removed) > 0) {
     finalSamRes[removed] <- length(names)-1
   }
@@ -486,7 +478,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
     finalPeaksRes[which(fPeaksRes$peaks.cluster == fPeaksResult[i])] <- indices[i]
   }
   clusterCount <- table(c(finalPeaksRes, 1:(length(names)-2)))-1
-  removed <- which(is.nan(finalPeaksRes))
+  removed <- c(rain$removed, which(is.nan(finalPeaksRes)))
   if (length(removed) > 0) {
     finalPeaksRes[removed] <- length(names)-1
   }
@@ -522,17 +514,21 @@ calculateCPDs <- function(results, template = NULL) {
     id <- names(results[i])
     result <- results[[i]]$counts
     markers <- as.character(unlist(template[which(template[,1] == id), 4:7]))
-    total <- sum(as.integer(result[grep('Total', names(result))]), na.rm = T)
-    empties <- sum(as.integer(result[grep('Empties', names(result))]), na.rm = T)
+    total <- as.integer(result[grep('Total', names(result))])
+    empties <- as.integer(result[grep('Empties', names(result))])
     for (j in 1:4) {
-      counts <- as.integer(result[grep(j, names(result))])
-      
-      counts <- sum(counts, na.rm = T)
-      cpd <- -log(1-counts/total)
       if (is.null(template)) {
         marker <- paste0("M", j)
       } else {
         marker <- markers[j]
+      }
+      if (marker == "") next
+      counts <- as.integer(result[grep(j, names(result))])
+      counts <- sum(counts, na.rm = T)
+      if (total == 0) {
+        cpd <- 0
+      } else {
+        cpd <- -log(1-(counts/total))
       }
       countedResult[[id]][[marker]] <- list(counts=counts, cpd=cpd)
     }
@@ -542,7 +538,7 @@ calculateCPDs <- function(results, template = NULL) {
   return(countedResult)
 }
 
-#' Create a cluster ensemble.
+#' Create a cluster ensemble
 #'
 #' This function takes the three (or less) clustering approaches of the dropClust package and combines them to one cluster ensemble. See \link{cl_medoid} for more information.
 #'
@@ -596,18 +592,45 @@ createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, file) {
   superCounts <- table(comb_ids)-1
   superCounts <- c(superCounts[2:(length(superCounts)-1)], superCounts[1], superCounts[length(superCounts)], sum(superCounts))
   names(superCounts) <- names
-  comb_ids[comb_ids==length(names)-1] <- 0/0
+  comb_ids[comb_ids==length(names)-1] <- 0/0 ## Remove the removed ones
   superResult <- cbind(file, "Cluster" = as.integer(comb_ids[1:nrow(file)]))
   return(list(data=superResult, confidence=conf, counts=superCounts))
 }
 
-
+#' Correct for DNA shearing
+#'
+#' Longer DNA templates produce a lower droplet count due to DNA shearing. 
+#' This function normalizes the dropClust result based on a stable marker of different lengths to negate the effect of differences in the lengths of the actual markers of interest.
+#'
+#' @param counts The counts per marker as provided by \link{calculateCPDs}.
+#' @param lengthControl The name of the length Control. If the template name is for example CPT2, the name in the template should be CPT2-125, where 125 represents the number of basepairs.
+#' @param stableControl The name of the stable Control used as a reference for this experiment.
+#' @return
+#' A linear regression model fitting the length vs ln(ratio) (see \link{lm} for details on linear regression).
+#' @export
+#' @examples
+#' # Run dropClust
+#' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+#' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
+#' 
+#' # Calculate the CPDs
+#' markerCPDs <- calculateCPDs(result$results)
+#'
 shearCorrection <- function(counts, lengthControl, stableControl) {
-  controlRatios <- NULL
+  controlRatios <- data.frame()
   for (well in counts) {
     markerPos = grep(paste0('^', lengthControl), names(well))
     controlPos = grep(paste0('^', stableControl), names(well))
-    if (length(markerPos) == 0 || length(lengthControl) == 0 || well[[controlPos]]$cpd == 0) next
+    if (length(markerPos) == 0 || length(controlPos) == 0 || 
+        length(well[[controlPos]]$cpd) == 0 || well[[controlPos]]$cpd == 0) next
     ratio <- log(well[[markerPos]]$cpd/well[[controlPos]]$cpd)
+    len <- unlist(strsplit(names(well[markerPos]), "-"))[2]
+    if (is.na(len)) {
+      warning(paste("Bad marker name", names(well[markerPos])))
+      next
+    }
+    controlRatios <- rbind(controlRatios, as.numeric(c(len, ratio)))
   }
+  colnames(controlRatios) <- c("Length", "Ratio")
+  lm(Ratio ~ Length, controlRatios)
 }

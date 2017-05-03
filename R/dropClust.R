@@ -82,8 +82,8 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
     if (substr(header, start = 1, stop = 1) == ">") {
       annotations <- unlist(strsplit(substring(header, 2), ","))
       annotations <- trimws(annotations)
-      if (length(annotations) != 4) {
-        warning("Unknown fields in header. Please use the following layout: experiment_name, ch1, ch2, descriptions")
+      if (length(annotations) < 4) {
+        warning("Missing fields in header. Please use the following layout: experiment_name, ch1, ch2, descriptions")
         annotations <- NULL
       } else {
         ch1 <- strsplit(annotations[2], "1=")[[1]][2]
@@ -92,8 +92,7 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
           warning("Unknown fields in header. Please use the following layout: experiment_name, ch1, ch2, descriptions")
           annotations <- NULL
         } else {
-          annotations[2] <- ch1
-          annotations[3] <- ch2
+          annotations <- c(annotations[1], ch1, ch2, paste(annotations[4:length(annotations)], collapse = ","))
           names(annotations) <- c("Name", "Ch1", "Ch2", "Descriptions")
         }
       }
@@ -144,6 +143,7 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
 #' @param directory The parent directory where the files should saved. A new folder with the experiment name will be created (see below).
 #' @param annotations Some basic metadata about the ddPCR reaction. If you provided \code{\link{runDropClust}} a template, this paramater can be filled with the corresponding field in the result. 
 #' Otherwise, you have to provide a character vector containing a name and the the color channels, e.g. \code{c(Name="ddPCR_01-04-2017", Ch1="HEX", Ch2="FAM")}
+#' @param invert Invert the axis, e.g. x = Ch2.Amplitude, y = Ch1.Amplitude
 #' @export
 #' @import ggplot2
 #' @examples
@@ -154,10 +154,10 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
 #' # Plot the results
 #' exportPlots(data = result$results, directory = "./Results/", annotations = result$annotations)
 #'
-exportPlots <- function(data, directory, annotations) {
+exportPlots <- function(data, directory, annotations, invert = FALSE) {
   library(ggplot2)
   directory <- normalizePath(directory, mustWork = T)
-  ifelse(!dir.exists(paste0(directory, annotations[1])), dir.create(paste0(directory,annotations[1])), FALSE)
+  ifelse(!dir.exists(paste0(directory,"/",annotations[1])), dir.create(paste0(directory,"/",annotations[1])), FALSE)
   
   for (i in 1:length(data)) {
     id <- names(data[i])
@@ -165,7 +165,11 @@ exportPlots <- function(data, directory, annotations) {
     if (is.null(result$data)) {
       next
     }
-    p <- ggplot(data = result$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+    if (invert) {
+      p <- ggplot(data = result$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+    } else {
+      p <- ggplot(data = result$data, mapping = aes(x = Ch1.Amplitude, y = Ch2.Amplitude))
+    }
     if (length(unique(result$data$Cluster)) > 8) {
       cbPalette <- c("#999999", "#f272e6","#e5bdbe","#bf0072","#cd93c5", "#1fba00","#5e7f65","#bdef00","#2c5d26","#ffe789","#4a8c00", "#575aef","#a3b0fa","#005caa","#019df8", "#bc8775")
     } else if (length(unique(result$data$Cluster)) > 4) {
@@ -175,8 +179,13 @@ exportPlots <- function(data, directory, annotations) {
     } else {
       cbPalette <- c("#999999", "#bc8775")
     }
-    p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T) + ggtitle(id) + theme_bw()+ theme(legend.position="none") + 
-      scale_colour_manual(values=cbPalette) + labs(x = paste(annotations[2], "Amplitude"), y = paste(annotations[3], "Amplitude"))
+    if (invert) {
+      p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T) + ggtitle(id) + theme_bw()+ theme(legend.position="none") + 
+        scale_colour_manual(values=cbPalette) + labs(x = paste(annotations[3], "Amplitude"), y = paste(annotations[2], "Amplitude"))
+    } else {
+      p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T) + ggtitle(id) + theme_bw()+ theme(legend.position="none") + 
+        scale_colour_manual(values=cbPalette) + labs(x = paste(annotations[2], "Amplitude"), y = paste(annotations[3], "Amplitude"))
+    }
     ggsave(paste0(directory,"/",annotations[1],"/", id, ".png"), p)
   }
 }
@@ -292,7 +301,7 @@ exportToCSV <- function(data, directory, annotations, raw = FALSE) {
 # wrapper function for exception handling in mcmapply
 dens_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
   missingClusters <- which(markerNames == "")
-  result <- tryCatch(runDensity(file, sensitivity, numOfMarkers, missingClusters), error = function(e) {
+  result <- tryCatch(runDensity(file[,c(1,2)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
     print(e)
   })
 }
@@ -300,7 +309,7 @@ dens_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
 # wrapper function for exception handling in mcmapply
 sam_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
   missingClusters <- which(markerNames == "")
-  result <- tryCatch(runSam(file, sensitivity, numOfMarkers, missingClusters), error = function(e) {
+  result <- tryCatch(runSam(file[,c(1,2)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
     print(e)
   })
 }
@@ -308,13 +317,13 @@ sam_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
 # wrapper function for exception handling in mcmapply
 peaks_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
   missingClusters <- which(markerNames == "")
-  result <- tryCatch(runPeaks(file, sensitivity, numOfMarkers, missingClusters), error = function(e) {
+  result <- tryCatch(runPeaks(file[,c(1,2)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
     print(e)
   })
 }
 
 # wrapper function for exception handling in mcmapply
-ensemble_wrapper <- function(dens_result, sam_result, peaks_result, csvFiles) {
+ensemble_wrapper <- function(dens_result, sam_result, peaks_result, file) {
   if (is.numeric(dens_result)) {
     dens_result <- NULL
   }
@@ -324,7 +333,7 @@ ensemble_wrapper <- function(dens_result, sam_result, peaks_result, csvFiles) {
   if (is.numeric(peaks_result)) {
     peaks_result <- NULL
   }
-  result <- tryCatch(createEnsemble(dens_result, sam_result, peaks_result, csvFiles), error = function(e) {
+  result <- tryCatch(createEnsemble(dens_result, sam_result, peaks_result, file[,c(1,2)]), error = function(e) {
     print(e)
   })
 }
