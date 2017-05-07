@@ -301,7 +301,7 @@ exportToCSV <- function(data, directory, annotations, raw = FALSE) {
 # wrapper function for exception handling in mcmapply
 dens_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
   missingClusters <- which(markerNames == "")
-  result <- tryCatch(runDensity(file[,c(1,2)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
+  result <- tryCatch(runDensity(file[,c(2,1)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
     print(e)
   })
 }
@@ -309,7 +309,7 @@ dens_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
 # wrapper function for exception handling in mcmapply
 sam_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
   missingClusters <- which(markerNames == "")
-  result <- tryCatch(runSam(file[,c(1,2)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
+  result <- tryCatch(runSam(file[,c(2,1)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
     print(e)
   })
 }
@@ -317,7 +317,7 @@ sam_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
 # wrapper function for exception handling in mcmapply
 peaks_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
   missingClusters <- which(markerNames == "")
-  result <- tryCatch(runPeaks(file[,c(1,2)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
+  result <- tryCatch(runPeaks(file[,c(2,1)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
     print(e)
   })
 }
@@ -333,7 +333,7 @@ ensemble_wrapper <- function(dens_result, sam_result, peaks_result, file) {
   if (is.numeric(peaks_result)) {
     peaks_result <- NULL
   }
-  result <- tryCatch(createEnsemble(dens_result, sam_result, peaks_result, file[,c(1,2)]), error = function(e) {
+  result <- tryCatch(createEnsemble(dens_result, sam_result, peaks_result, file[,c(2,1)]), error = function(e) {
     print(e)
   })
 }

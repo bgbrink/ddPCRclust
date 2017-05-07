@@ -154,7 +154,7 @@ runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) 
     ClusterCentres <- rbind(ClusterCentres, abs(quadCluster$clusters))
   }
 
-  angles <- sapply(1:nrow(firstClusters$clusters), function(x) return(atan2(firstClusters$clusters[x,2]-emptyDroplets[2], firstClusters$clusters[x,1]-emptyDroplets[1])))
+  angles <- sapply(1:nrow(firstClusters$clusters), function(x) return(atan2(firstClusters$clusters[x,1]-emptyDroplets[1], firstClusters$clusters[x,2]-emptyDroplets[2])))
   cuts <- c(0, 0.5*pi/4, 1.5*pi/4, pi/2)
   for (i in missingClusters) {
     angles <- c(angles, cuts[i])
@@ -162,25 +162,16 @@ runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) 
   distMatrix <- t(sapply(1:length(angles), function(x) return(abs(angles[x]-cuts))))
   order <- solve_LSAP(distMatrix)
   deletions <- which(!1:4 %in% order)
-  deletions <- deletions[!deletions %in% missingClusters]
-  order <- order[1:nrow(firstClusters$clusters)]
-  names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
+  deletions <- c(deletions, missingClusters)
+  # deletions <- deletions[!deletions %in% missingClusters]
+  # order <- order[1:nrow(firstClusters$clusters)]
+  names <- c("Empties","1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Removed","Total")
+  names_indices <- 1:length(names)
   indices <- vector()
-  for (cl in missingClusters) {
-    indices <- c(indices, grep(cl, names))
-  }
-  if (length(indices) > 0) names <- names[-indices]
-  indices <- vector()
-  for (cl in order) {
-    indices <- c(indices, grep(cl, names))
-  }
-  indices <- sort(unique(indices))
-  rem_indices <- vector()
   for (cl in deletions) {
-    rem_indices <- c(rem_indices, grep(cl, names))
+    indices <- c(indices, grep(cl, names))
   }
-  indices <- c(1, indices[!indices %in% rem_indices]+1)
-  
+  if (length(indices) > 0) names_indices <- names_indices[-indices]
   
   result <- rep(0, nrow(f))
   newData <- f@exprs
@@ -200,14 +191,13 @@ runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) 
   ClusterCentresNew <- t(sapply(1:NumOfClusters, function(x) return(colMeans(f@exprs[result == x, , drop=F]))))
   ClusterCentresNew[which(is.nan(ClusterCentresNew))] <- ClusterCentres[which(is.nan(ClusterCentresNew))]
   
-  
   fDensResult <- assignRain(clusterMeans = ClusterCentresNew, data = f@exprs, result = result, emptyDroplets = 1, firstClusters = posOfFirsts, secondClusters = posOfSeconds, thirdClusters = posOfThirds, fourthCluster = posOfFourth, flowDensity = T)
-  
+
   fDensResult$result[fDensResult$result == 0] <- 0/0
   if (NumberOfSinglePos < 4) {
     tempResult <- fDensResult$result
     for (i in 1:nrow(ClusterCentres)) {
-      fDensResult$result[which(tempResult == i)] <- indices[i]
+      fDensResult$result[which(tempResult == i)] <- names_indices[i]
     }
   } else {
     tempResult <- fDensResult$result
@@ -218,14 +208,14 @@ runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) 
   removed <- c(fDensResult$removed, which(is.nan(fDensResult$result)))
   
   NumOfEventsClust <- table(c(fDensResult$result, 1:(length(names)-2)))-1
-  NumOfEventsClust <- c(NumOfEventsClust[2:length(NumOfEventsClust)],NumOfEventsClust[1],length(removed))
+  NumOfEventsClust <- c(NumOfEventsClust, length(removed)) # add on removed
   NumOfEventsClust <- c(NumOfEventsClust, sum(NumOfEventsClust)) # add on total
   names(NumOfEventsClust) = names
   
   if (length(removed) > 0) {
     fDensResult$result[removed] <- length(names)-1 # remove the removed ones
   }
-  result <- cbind(file, "Cluster" = fDensResult$result)
+  result <- cbind(file[,c(2,1)], "Cluster" = fDensResult$result)
   partition <- as.cl_partition(c(fDensResult$result, 1:(length(names)-1)))
   return(list(data=result, counts=NumOfEventsClust, firstClusters=firstClusters$clusters, partition=partition))
 }
@@ -285,7 +275,7 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) 
   secondaryClusters <- tertiaryClusters <- quaternaryCluster <- NULL
   firstClusters <- findPrimaryClusters(samRes, clusterMeans, emptyDroplets, badClusters, dimensions, file, f, numOfMarkers)
   ## estimate missing clusters based on angle:
-  angles <- sapply(1:length(firstClusters), function(x) return(atan2(clusterMeans[firstClusters[x],2]-clusterMeans[emptyDroplets,2], clusterMeans[firstClusters[x],1]-clusterMeans[emptyDroplets,1])))
+  angles <- sapply(1:length(firstClusters), function(x) return(atan2(clusterMeans[firstClusters[x],1]-clusterMeans[emptyDroplets,1], clusterMeans[firstClusters[x],2]-clusterMeans[emptyDroplets,2])))
   cuts <- c(0, 0.5*pi/4, 1.5*pi/4, pi/2)
   for (i in missingClusters) {
     angles <- c(angles, cuts[i])
@@ -293,24 +283,16 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) 
   distMatrix <- t(sapply(1:length(angles), function(x) return(abs(angles[x]-cuts))))
   order <- solve_LSAP(distMatrix)
   deletions <- which(!1:4 %in% order)
-  deletions <- deletions[!deletions %in% missingClusters]
-  order <- order[1:length(firstClusters)]
-  names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
+  deletions <- c(deletions, missingClusters)
+  # deletions <- deletions[!deletions %in% missingClusters]
+  # order <- order[1:nrow(firstClusters$clusters)]
+  names <- c("Empties","1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Removed","Total")
+  names_indices <- 1:length(names)
   indices <- vector()
-  for (cl in missingClusters) {
-    indices <- c(indices, grep(cl, names))
-  }
-  if (length(indices) > 0) names <- names[-indices]
-  indices <- vector()
-  for (cl in order) {
-    indices <- c(indices, grep(cl, names))
-  }
-  indices <- sort(unique(indices))
-  rem_indices <- vector()
   for (cl in deletions) {
-    rem_indices <- c(rem_indices, grep(cl, names))
+    indices <- c(indices, grep(cl, names))
   }
-  indices <- c(1, indices[!indices %in% rem_indices]+1)
+  if (length(indices) > 0) names_indices <- names_indices[-indices]
   
   if(length(firstClusters) == 1) {
     samResult <- c(emptyDroplets, firstClusters)
@@ -352,7 +334,7 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) 
   }
   finalSamRes <- rep(0/0, length(samRes))
   for (i in 1:length(samResult)) {
-    finalSamRes[which(samRes == samResult[i])] <- indices[i]
+    finalSamRes[which(samRes == samResult[i])] <- names_indices[i]
   }
   clusterCount <- table(c(finalSamRes, 1:(length(names)-2)))-1
   removed <- c(rain$removed, which(is.nan(finalSamRes)))
@@ -360,9 +342,10 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) 
     finalSamRes[removed] <- length(names)-1
   }
   
-  samCount <- c(clusterCount[2:length(clusterCount)], clusterCount[1], length(removed), length(file[,1]))
+  samCount <- c(clusterCount, length(removed))
+  samCount <- c(samCount, sum(samCount))
   names(samCount) = names
-  result <- cbind(data, "Cluster" = finalSamRes)
+  result <- cbind(data[,c(2,1)], "Cluster" = finalSamRes)
   partition <- as.cl_partition(c(finalSamRes, 1:(length(names)-1)))
   return(list(data=result, counts=samCount, firstClusters=firstClusters, partition=partition))
 }
@@ -419,7 +402,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
   secondaryClusters <- tertiaryClusters <- quaternaryCluster <- NULL
   firstClusters <- findPrimaryClusters(fPeaksRes$peaks.cluster, clusterMeans, emptyDroplets, badClusters, dimensions, file, f, numOfMarkers)
   ## estimate missing clusters based on angle:
-  angles <- sapply(1:length(firstClusters), function(x) return(atan2(clusterMeans[firstClusters[x],2]-clusterMeans[emptyDroplets,2], clusterMeans[firstClusters[x],1]-clusterMeans[emptyDroplets,1])))
+  angles <- sapply(1:length(firstClusters), function(x) return(atan2(clusterMeans[firstClusters[x],1]-clusterMeans[emptyDroplets,1], clusterMeans[firstClusters[x],2]-clusterMeans[emptyDroplets,2])))
   cuts <- c(0, 0.5*pi/4, 1.5*pi/4, pi/2)
   for (i in missingClusters) {
     angles <- c(angles, cuts[i])
@@ -427,24 +410,16 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
   distMatrix <- t(sapply(1:length(angles), function(x) return(abs(angles[x]-cuts))))
   order <- solve_LSAP(distMatrix)
   deletions <- which(!1:4 %in% order)
-  deletions <- deletions[!deletions %in% missingClusters]
-  order <- order[1:length(firstClusters)]
-  names <- c("1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Empties","Removed","Total")
+  deletions <- c(deletions, missingClusters)
+  # deletions <- deletions[!deletions %in% missingClusters]
+  # order <- order[1:nrow(firstClusters$clusters)]
+  names <- c("Empties","1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Removed","Total")
+  names_indices <- 1:length(names)
   indices <- vector()
-  for (cl in missingClusters) {
-    indices <- c(indices, grep(cl, names))
-  }
-  if (length(indices) > 0) names <- names[-indices]
-  indices <- vector()
-  for (cl in order) {
-    indices <- c(indices, grep(cl, names))
-  }
-  indices <- sort(unique(indices))
-  rem_indices <- vector()
   for (cl in deletions) {
-    rem_indices <- c(rem_indices, grep(cl, names))
+    indices <- c(indices, grep(cl, names))
   }
-  indices <- c(1, indices[!indices %in% rem_indices]+1)
+  if (length(indices) > 0) names_indices <- names_indices[-indices]
   
   if(length(firstClusters) == 1) {
     fPeaksResult <- c(emptyDroplets, firstClusters)
@@ -475,7 +450,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
   }
   finalPeaksRes <- rep(0/0, length(fPeaksRes$peaks.cluster))
   for (i in 1:length(fPeaksResult)) {
-    finalPeaksRes[which(fPeaksRes$peaks.cluster == fPeaksResult[i])] <- indices[i]
+    finalPeaksRes[which(fPeaksRes$peaks.cluster == fPeaksResult[i])] <- names_indices[i]
   }
   clusterCount <- table(c(finalPeaksRes, 1:(length(names)-2)))-1
   removed <- c(rain$removed, which(is.nan(finalPeaksRes)))
@@ -483,9 +458,10 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
     finalPeaksRes[removed] <- length(names)-1
   }
   
-  fPeaksCount <- c(clusterCount[2:length(clusterCount)], clusterCount[1], length(removed), length(file[,1]))
+  fPeaksCount <- c(clusterCount, length(removed))
+  fPeaksCount <- c(fPeaksCount, sum(fPeaksCount))
   names(fPeaksCount) = names
-  result <- cbind(data, "Cluster" = finalPeaksRes)
+  result <- cbind(data[,c(2,1)], "Cluster" = finalPeaksRes)
   partition <- as.cl_partition(c(finalPeaksRes, 1:(length(names)-1)))
   return(list(data=result, counts=fPeaksCount, firstClusters=firstClusters, partition=partition))
 }
@@ -590,7 +566,7 @@ createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, file) {
   }
 
   superCounts <- table(comb_ids)-1
-  superCounts <- c(superCounts[2:(length(superCounts)-1)], superCounts[1], superCounts[length(superCounts)], sum(superCounts))
+  superCounts <- c(superCounts, sum(superCounts))
   names(superCounts) <- names
   comb_ids[comb_ids==length(names)-1] <- 0/0 ## Remove the removed ones
   superResult <- cbind(file, "Cluster" = as.integer(comb_ids[1:nrow(file)]))
