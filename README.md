@@ -26,12 +26,57 @@ alt="Example G1"
 width="400">
 </p>
 
+## Installation
+You can install this package like any other package from GitHub using devtools
+```R
+library(devtools)
+install_github("bgbrink/dropclust")
+```
+**Attention:** This method currently only works, when the GNU Scientific Library (GSL) is installed on your machine, because one of the dependencies (flowPeaks) needs it in order to compile. You can however download this repository as a ZIP file and install this package manually, but you will need to download all the dependencies (check the DESCRIPTION file for a complete list) by hand from CRAN or Bioconductor, in which case you will get the compiled binary version of the flowPeaks package. If anyone knows how to make this the default behaviour for `install_github`, please share your wisdom [here](http://stackoverflow.com/questions/43634751/r-package-description-remotes-from-bioconductor-should-install-binary).
+
 ## Usage
-Lorem ipsum
+This package was written in close cooperation with the BC Cancer Agency in Vancouver, Canada. Please read their recently published [manuscript](https://doi.org/10.1371/journal.pone.0161274) for details on the background and how to produce the necessary data.
+
+The raw data should be csv files with two dimensions, each dimension representing the intensity for one color channel:
+
+Ch1 Amplitude | Ch2 Amplitude 
+--- | --- 
+2360.098 |	6119.26953
+2396.3916 |	1415.31665
+2445.838 |	6740.79639
+2451.63867 |	1381.74683
+2492.55884 |	1478.19617
+2519.6355 |	7082.25049
+&#8942; | &#8942;
+
+Since one experiment most likely consists of many different files, naming them apropriately is important in order to keep things organized. We chose to use a unique identifier in each filename of the form `"^[[:upper:]][[:digit:]][[:digit:]]$"` (A01, A02, A03, B01, B02, ...), which is usually included automatically by the ddPCR machine. A set of eight example files is included in this package. 
+
+In order to use all functions of this package, it is also necessary to create a template with more information about this experiment. The template has to be a csv file with a header, which contains information abuot each of the raw data files according to their unique identifier, as explained above. A template for the eight example files is also included in this package.
+
+*> Name of your experiment, channel1=HEX, channel2=FAM, annotations(date, experimentor, etc)*
+
+Well|Sample type|No of markers|Marker 1|Marker 2|Marker 3|Marker 4
+---|---|---|---|---|---|---
+B01|Blood|4|a|b|c|d
+G01|FFPE|4|a|b|c|d
+F02|Blood|3|a||c|d
+D03|FFPE|3|a||c|d
+A04|FFPE|4|a|b|c|d
+G07|Cell line|3|a||c|d
+G08|Cell line|3|a||c|d
+E09|FFPE|2|||c|d
+
+Run the algorithm using the provided examples with the following command:
+```R
+# Run dropClust
+exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
+```
+All functions are documented. You can find addtional information using the help function of R: `?dropClust`
 
 ## License
     dropClust
-    Copyright (C) 2017  Benedikt G. Brink
+    Copyright (C) 2017  Benedikt G. Brink, Bielefeld University
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
