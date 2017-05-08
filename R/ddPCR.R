@@ -481,7 +481,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
 #' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 #' 
 #' # Calculate the CPDs
-#' markerCPDs <- calculateCPDs(result$results)
+#' markerCPDs <- calculateCPDs(result$results, result$template)
 #'
 calculateCPDs <- function(results, template = NULL) {
   countedResult <- list()

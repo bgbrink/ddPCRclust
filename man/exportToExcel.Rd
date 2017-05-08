@@ -26,6 +26,7 @@ exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.n
 result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 
 # Export the results
+dir.create("./Results")
 exportToExcel(data = result$results, directory = "./Results/", annotations = result$annotations)
 
 }

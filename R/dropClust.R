@@ -152,6 +152,7 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
 #' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 #' 
 #' # Plot the results
+#' dir.create("./Results")
 #' exportPlots(data = result$results, directory = "./Results/", annotations = result$annotations)
 #'
 exportPlots <- function(data, directory, annotations, invert = FALSE) {
@@ -208,6 +209,7 @@ exportPlots <- function(data, directory, annotations, invert = FALSE) {
 #' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 #' 
 #' # Export the results
+#' dir.create("./Results")
 #' exportToExcel(data = result$results, directory = "./Results/", annotations = result$annotations)
 #'
 exportToExcel <- function(data, directory, annotations, raw = FALSE) {
@@ -262,6 +264,7 @@ exportToExcel <- function(data, directory, annotations, raw = FALSE) {
 #' result <- runDropClust(exampleFiles)
 #' 
 #' # Export the results
+#' dir.create("./Results")
 #' exportToCSV(data = result$results, directory = "./Results/", annotations = result$annotations)
 #'
 exportToCSV <- function(data, directory, annotations, raw = FALSE) {
