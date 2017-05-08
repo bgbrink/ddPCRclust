@@ -47,7 +47,7 @@ Ch1 Amplitude | Ch2 Amplitude
 2451.63867 |	1381.74683
 2492.55884 |	1478.19617
 2519.6355 |	7082.25049
-: | :
+&#8942; | &#8942;
 
 Since one experiment most likely consists of many different files, naming them apropriately is important in order to keep things organized. We chose to use a unique identifier in each filename of the form `"^[[:upper:]][[:digit:]][[:digit:]]$"` (A01, A02, A03, B01, B02, ...), which is usually included automatically by the ddPCR machine. A set of eight example files is included in this package. 
 
@@ -66,12 +66,13 @@ G07|Cell line|3|a||c|d
 G08|Cell line|3|a||c|d
 E09|FFPE|2|||c|d
 
-You can then run the algorithm with the following command.
+Run the algorithm using the provided examples with the following command:
 ```R
 # Run dropClust
 exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
 result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 ```
+All functions are documented. You can find addtional information using the help function of R: `?dropClust`
 
 ## License
     dropClust
