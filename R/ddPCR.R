@@ -28,6 +28,7 @@ library(clue)
 #' \item{counts}{The droplet count for each cluster.}
 #' \item{firstClusters}{The position of the primary clusters.}
 #' \item{partition}{The cluster numbers as a CLUE partition (see clue package for more information).}
+#' @import flowDensity clue
 #' @export
 #' @examples
 #' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
@@ -364,6 +365,7 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) 
 #' \item{counts}{The droplet count for each cluster.}
 #' \item{firstClusters}{The position of the primary clusters.}
 #' \item{partition}{The cluster numbers as a CLUE partition (see clue package for more information).}
+#' @import flowPeaks flowDensity clue
 #' @export
 #' @examples
 #' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
@@ -560,7 +562,7 @@ createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, file) {
     conf <- 1
   } else {
     cens <- cl_ensemble(list = listResults)
-    conf <- mean(cl_agreement(cens))
+    conf <- mean(cl_agreement(cens, method = "cRand"))
     comb <- cl_medoid(cens)
     comb_ids <- cl_class_ids(comb)
   }

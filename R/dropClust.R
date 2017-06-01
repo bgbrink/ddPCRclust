@@ -39,7 +39,9 @@
 #' @name dropClust
 "_PACKAGE"
 #> [1] "_PACKAGE"
-
+library(parallel)
+library(ggplot2)
+library(openxlsx)
 
 #' Run the dropClust algorithm
 #'
@@ -73,8 +75,7 @@
 #' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 #'
 runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NULL, fast = FALSE) {
-  library(parallel)
-  
+  time <- proc.time()
   ids <- annotations <- vector()
   if (!is.null(template)) {
     header <- readLines(template, n = 1)
@@ -130,8 +131,9 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
     }
     superResults <- list()
     superResults[[ids]] <- ensemble_wrapper(dens_result, sam_result, peaks_result, csvFiles)
-  }
-  return(list(results=superResults, annotations=annotations, template=template))
+  }    
+  time <- (proc.time()-time)[3]
+  return(list(results=superResults, annotations=annotations, template=template, runtime=time))
 }
 
 
@@ -155,8 +157,8 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
 #' dir.create("./Results")
 #' exportPlots(data = result$results, directory = "./Results/", annotations = result$annotations)
 #'
-exportPlots <- function(data, directory, annotations, invert = FALSE) {
-  library(ggplot2)
+exportPlots <- function(data, directory, annotations, format = ".png", invert = FALSE) {
+
   directory <- normalizePath(directory, mustWork = T)
   ifelse(!dir.exists(paste0(directory,"/",annotations[1])), dir.create(paste0(directory,"/",annotations[1])), FALSE)
   
@@ -181,13 +183,13 @@ exportPlots <- function(data, directory, annotations, invert = FALSE) {
       cbPalette <- c("#999999", "#bc8775")
     }
     if (invert) {
-      p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T) + ggtitle(id) + theme_bw()+ theme(legend.position="none") + 
-        scale_colour_manual(values=cbPalette) + labs(x = paste(annotations[3], "Amplitude"), y = paste(annotations[2], "Amplitude"))
+      p <- p + geom_point(aes(color = factor(Cluster)), size = .4, na.rm = T) + ggtitle(id) + theme_bw()+ theme(legend.position="none") + 
+        scale_colour_manual(values=cbPalette) + labs(x = paste(annotations[3], "Amplitude"), y = paste(annotations[2], "Amplitude")) + theme(axis.text=element_text(size=12),axis.title=element_text(size=14))
     } else {
-      p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T) + ggtitle(id) + theme_bw()+ theme(legend.position="none") + 
-        scale_colour_manual(values=cbPalette) + labs(x = paste(annotations[2], "Amplitude"), y = paste(annotations[3], "Amplitude"))
+      p <- p + geom_point(aes(color = factor(Cluster)), size = .4, na.rm = T) + ggtitle(id) + theme_bw()+ theme(legend.position="none") + 
+        scale_colour_manual(values=cbPalette) + labs(x = paste(annotations[2], "Amplitude"), y = paste(annotations[3], "Amplitude")) + theme(axis.text=element_text(size=12),axis.title=element_text(size=14))
     }
-    ggsave(paste0(directory,"/",annotations[1],"/", id, ".png"), p)
+    ggsave(paste0(directory,"/",annotations[1],"/", id, format), p, dpi = 350)
   }
 }
 
@@ -213,7 +215,7 @@ exportPlots <- function(data, directory, annotations, invert = FALSE) {
 #' exportToExcel(data = result$results, directory = "./Results/", annotations = result$annotations)
 #'
 exportToExcel <- function(data, directory, annotations, raw = FALSE) {
-  library(openxlsx)
+
   directory <- normalizePath(directory, mustWork = T)
   ifelse(!dir.exists(paste0(directory,"/", annotations[1])), dir.create(paste0(directory,"/",annotations[1])), FALSE)
   dataToWrite <- NULL
@@ -340,4 +342,3 @@ ensemble_wrapper <- function(dens_result, sam_result, peaks_result, file) {
     print(e)
   })
 }
-

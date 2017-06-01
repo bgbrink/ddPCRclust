@@ -4,7 +4,7 @@
 \alias{exportPlots}
 \title{Plot the algorithms results with ggplot2}
 \usage{
-exportPlots(data, directory, annotations, invert = FALSE)
+exportPlots(data, directory, annotations, format = ".png", invert = FALSE)
 }
 \arguments{
 \item{data}{The result of the dropClust algorithm}
