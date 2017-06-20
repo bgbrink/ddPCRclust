@@ -572,7 +572,7 @@ createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, file) {
   names(superCounts) <- names
   comb_ids[comb_ids==length(names)-1] <- 0/0 ## Remove the removed ones
   superResult <- cbind(file, "Cluster" = as.integer(comb_ids[1:nrow(file)]))
-  return(list(data=superResult, confidence=conf, counts=superCounts))
+  return(list(data=superResult, confidence=conf, counts=superCounts), nrOfAlgorithms=length(listResults))
 }
 
 #' Correct for DNA shearing
