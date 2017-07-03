@@ -77,6 +77,8 @@ library(openxlsx)
 runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NULL, fast = FALSE) {
   time <- proc.time()
   ids <- annotations <- vector()
+  markerNames <- list(c("M1", "M2", "M3", "M4"))
+  ids <- unlist(lapply(files, function(x) {grep("^[[:upper:]][[:digit:]][[:digit:]]$", unlist(strsplit(x, "_")), value = T)}))
   if (!is.null(template)) {
     header <- readLines(template, n = 1)
     header <- gsub("[\\\"]", "", header)
@@ -98,7 +100,6 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
         }
       }
       template <- read.csv(template, skip = 1)
-      ids <- unlist(lapply(files, function(x) {grep("^[[:upper:]][[:digit:]][[:digit:]]$", unlist(strsplit(x, "_")), value = T)}))
       numOfMarkers <- lapply(ids, function(x) {unlist(template[which(template[,1] == x), 3])})
       markerNames <- lapply(ids, function(x) {unlist(template[which(template[,1] == x), 4:7])})
     } else {
@@ -174,7 +175,7 @@ exportPlots <- function(data, directory, annotations, format = ".png", invert = 
       p <- ggplot(data = result$data, mapping = aes(x = Ch1.Amplitude, y = Ch2.Amplitude))
     }
     if (length(unique(result$data$Cluster)) > 8) {
-      cbPalette <- c("#999999", "#f272e6","#e5bdbe","#bf0072","#cd93c5", "#1fba00","#5e7f65","#bdef00","#2c5d26","#ffe789","#4a8c00", "#575aef","#a3b0fa","#005caa","#019df8", "#bc8775")
+      cbPalette <- c("#999999", "#f272e6","#e5bdbe","#bf0072","#cd93c5", "#1fba00","#5e7f65","#bdef00","#2c5d26","#ffe789","#4a8c00", "#575aef","#a3b0fa","#005caa","#01c8fe", "#bc8775")
     } else if (length(unique(result$data$Cluster)) > 4) {
       cbPalette <- c("#999999", "#d800c4","#fca3a7","#bb004e", "#70cf56","#8b9d61","#ccd451", "#bc8775")
     } else if (length(unique(result$data$Cluster)) > 2) {
@@ -189,7 +190,7 @@ exportPlots <- function(data, directory, annotations, format = ".png", invert = 
       p <- p + geom_point(aes(color = factor(Cluster)), size = .4, na.rm = T) + ggtitle(id) + theme_bw()+ theme(legend.position="none") + 
         scale_colour_manual(values=cbPalette) + labs(x = paste(annotations[2], "Amplitude"), y = paste(annotations[3], "Amplitude")) + theme(axis.text=element_text(size=12),axis.title=element_text(size=14))
     }
-    ggsave(paste0(directory,"/",annotations[1],"/", id, format), p, dpi = 350)
+    ggsave(paste0(directory,"/",annotations[1],"/", id, format), p, dpi = 1200)
   }
 }
 

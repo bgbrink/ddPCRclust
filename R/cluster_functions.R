@@ -1,6 +1,6 @@
 ## Part of the dropClust algorithm
 ## Author: Benedikt G Brink, Bielefeld University
-## April 2017
+## July 2017
 
 # Find the primary clusters based on their density peaks found by flowDensity.
 findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
@@ -575,14 +575,14 @@ findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dim
   selection <- selection[(dataTable[selection] > max(dataTable[selection])/4)]
   realFirstCluster1 <- selection[which.max(clusterMeans[selection, 2])]
   
-  collinear1 <- realFirstCluster1
-  for (i in 1:nrow(clusterMeans)) {
-    if (i == realFirstCluster1 || i == emptyDroplets)
-      next
-    test <- matrix(clusterMeans[c(emptyDroplets,realFirstCluster1,i),], ncol=2)
-    if (abs(det(cbind(a, test/100))) < (dimensions[1]/(NumberOfSinglePos*20)))
-      collinear1 <- c(collinear1, i)
-  }
+  # collinear1 <- realFirstCluster1
+  # for (i in 1:nrow(clusterMeans)) {
+  #   if (i == realFirstCluster1 || i == emptyDroplets)
+  #     next
+  #   test <- matrix(clusterMeans[c(emptyDroplets,realFirstCluster1,i),], ncol=2)
+  #   if (abs(det(cbind(a, test/100))) < (dimensions[1]/(NumberOfSinglePos*20)))
+  #     collinear1 <- c(collinear1, i)
+  # }
   
   clusterMeans2 <- clusterMeans[-c(emptyDroplets, collinear1, remove), , drop=F]
   if (length(clusterMeans2) == 0) return(realFirstCluster1)
@@ -606,13 +606,13 @@ findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dim
   if (dataTable[realFirstCluster2] < dataTable[realFirstCluster1]/10) {
     cat(paste("Something wrong with primary cluster detection (Ch2: only", dataTable[realFirstCluster2], "droplets). Trying again..."))
     remove <- c(remove, collinear2)
-    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, dimensions, File, f, NumberOfSinglePos))
+    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, dimensions, File, f, (NumberOfSinglePos-1)))
   }
 
   if (dataTable[realFirstCluster1] < dataTable[realFirstCluster2]/10) {
     cat(paste("Something wrong with primary cluster detection (Ch1: only", dataTable[realFirstCluster1], "droplets). Trying again..."))
     remove <- c(remove, collinear1)
-    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, dimensions, File, f, NumberOfSinglePos))
+    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, dimensions, File, f, (NumberOfSinglePos-1)))
   }
   
   x_leftPrim <- clusterMeans[realFirstCluster1,1]
