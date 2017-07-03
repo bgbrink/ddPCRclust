@@ -78,7 +78,10 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
   time <- proc.time()
   ids <- annotations <- vector()
   markerNames <- list(c("M1", "M2", "M3", "M4"))
+<<<<<<< HEAD
   ids <- unlist(lapply(files, function(x) {grep("^[[:upper:]][[:digit:]][[:digit:]]$", unlist(strsplit(x, "_")), value = T)}))
+=======
+>>>>>>> 318842c45c9cab7357d804b717d0bdaaeb25cbb6
   if (!is.null(template)) {
     header <- readLines(template, n = 1)
     header <- gsub("[\\\"]", "", header)
