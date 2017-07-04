@@ -491,6 +491,7 @@ calculateCPDs <- function(results, template = NULL) {
   for (i in 1:length(results)) {
     id <- names(results[i])
     result <- results[[i]]$counts
+    if (is.null(result)) next
     markers <- as.character(unlist(template[which(template[,1] == id), 4:7]))
     total <- as.integer(result[grep('Total', names(result))])
     empties <- as.integer(result[grep('Empties', names(result))])

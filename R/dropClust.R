@@ -42,6 +42,7 @@
 library(parallel)
 library(ggplot2)
 library(openxlsx)
+library(R.utils)
 
 #' Run the dropClust algorithm
 #'
@@ -52,7 +53,7 @@ library(openxlsx)
 #' Else, a vector with length equal to \code{length(files)} should be provided, containing the number of markers used for the respective reaction.
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param template A csv file containing information about the individual ddPCR runs. An example template is provided with this package. For more information, please check the repository on github. 
-#' @param fast Run a simple version of the algorithm that is about 10x faster. For clean data, this can already deliver very good results. In any case useful to get a quick overview over the data.
+#' @param fast Run a simpler version of the algorithm that is about 10x faster. For clean data, this can already deliver very good results. In any case useful to get a quick overview over the data.
 #' @return
 #' \item{results}{The results of the dropClust algorithm. It contains three fields: \cr
 #' \code{data} The original input data minus the removed events (for plotting) 
@@ -68,7 +69,7 @@ library(openxlsx)
 #' }
 #' \item{template}{A parsed dataframe containing the template, if one was provided.}
 #' @export
-#' @import parallel
+#' @import parallel R.utils
 #' @examples
 #' # Run dropClust
 #' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
@@ -307,25 +308,22 @@ exportToCSV <- function(data, directory, annotations, raw = FALSE) {
 # wrapper function for exception handling in mcmapply
 dens_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
   missingClusters <- which(markerNames == "")
-  result <- tryCatch(runDensity(file[,c(2,1)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
-    print(e)
-  })
+  result <- tryCatch(expr = evalWithTimeout(runDensity(file[,c(2,1)], sensitivity, numOfMarkers, missingClusters), timeout = 60), 
+                     TimeoutException = function(ex) "TimedOut", error = function(e) print(e))
 }
 
 # wrapper function for exception handling in mcmapply
 sam_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
   missingClusters <- which(markerNames == "")
-  result <- tryCatch(runSam(file[,c(2,1)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
-    print(e)
-  })
+  result <- tryCatch(expr = evalWithTimeout(runSam(file[,c(2,1)], sensitivity, numOfMarkers, missingClusters), timeout = 60), 
+                     TimeoutException = function(ex) "TimedOut", error = function(e) print(e))
 }
 
 # wrapper function for exception handling in mcmapply
 peaks_wrapper <- function(file, sensitivity=1, numOfMarkers, markerNames) {
   missingClusters <- which(markerNames == "")
-  result <- tryCatch(runPeaks(file[,c(2,1)], sensitivity, numOfMarkers, missingClusters), error = function(e) {
-    print(e)
-  })
+  result <- tryCatch(expr = evalWithTimeout(runPeaks(file[,c(2,1)], sensitivity, numOfMarkers, missingClusters), timeout = 60), 
+                     TimeoutException = function(ex) "TimedOut", error = function(e) print(e))
 }
 
 # wrapper function for exception handling in mcmapply

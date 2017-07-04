@@ -606,13 +606,13 @@ findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dim
   if (dataTable[realFirstCluster2] < dataTable[realFirstCluster1]/10) {
     cat(paste("Something wrong with primary cluster detection (Ch2: only", dataTable[realFirstCluster2], "droplets). Trying again..."))
     remove <- c(remove, collinear2)
-    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, dimensions, File, f, (NumberOfSinglePos-1)))
+    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, 1.1*dimensions, File, f, NumberOfSinglePos))
   }
 
   if (dataTable[realFirstCluster1] < dataTable[realFirstCluster2]/10) {
     cat(paste("Something wrong with primary cluster detection (Ch1: only", dataTable[realFirstCluster1], "droplets). Trying again..."))
     remove <- c(remove, collinear1)
-    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, dimensions, File, f, (NumberOfSinglePos-1)))
+    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, 1.1*dimensions, File, f, NumberOfSinglePos))
   }
   
   x_leftPrim <- clusterMeans[realFirstCluster1,1]
