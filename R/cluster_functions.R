@@ -1055,14 +1055,11 @@ adjustClusterMeans <- function(data, clusterMeans, result, clusters) {
 assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters, secondClusters, thirdClusters, fourthCluster, flowDensity) {
   remove <- vector()
   sdeviations <- list()
+  S <- var(data)
   rownames(data) <- 1:nrow(data)
   scalingHelper <- mean(scalingParam/4)
-  ## empty to primary clusters:
-  sdEmpties <- c(sd(data[result==emptyDroplets,1], na.rm = T) + scalingParam[1], sd(data[result==emptyDroplets,2], na.rm = T)+scalingParam[2])
   
   # Calculate standard deviations:
-  newData <- subset(data, !result %in% c(secondClusters,thirdClusters,fourthCluster))
-  newData <- subset(newData, !(newData[,1] < (clusterMeans[emptyDroplets,1]+sdEmpties[1]) & newData[,2] < (clusterMeans[emptyDroplets,2]+sdEmpties[2])))
   for (c in firstClusters) {
     if (c==0) next
     sdeviation <- 2*c(sd(data[which(result == c),1]), 
@@ -1088,14 +1085,16 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
     sdeviations[[c]] <- sdeviation
   }
   
-  # Go through each cluster:
+  newData <- subset(data, !result %in% c(secondClusters,thirdClusters,fourthCluster))
+  posEv <- which(mahalanobis(newData, clusterMeans[1,], S) < 0.2)
+  result[as.numeric(rownames(newData[posEv,]))] <- 1
+  newData <- newData[-posEv,]
+  # Empty to first Clusters:
   for (c in firstClusters) {
     if (c==0) next
-    sdC <- sdeviations[[c]]
-    result[as.numeric(rownames(newData[(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
-                                        & newData[,2] < clusterMeans[c,2]+sdC[2] & newData[,2] > clusterMeans[c,2]-sdC[2]),]))] <- c
-    newData <- subset(newData, !(newData[,1] > clusterMeans[c,1]-sdC[1] & newData[,2] > clusterMeans[c,2]-sdC[2]))
-    #    newData <- newData[-intersect(as.numeric(rownames(newData)), which(result==c)),]
+    posEv <- which(mahalanobis(newData, clusterMeans[c,], S) < 0.2)
+    result[as.numeric(rownames(newData[posEv,]))] <- c
+    newData <- newData[-posEv,]
   }
   if (nrow(newData) > 0) {
     m <- matrix(nrow = nrow(newData), ncol = length(firstClusters))
@@ -1130,23 +1129,17 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
       newData <- subset(data, !result %in% c(emptyDroplets,thirdClusters,fourthCluster))
       for (c in firstClusters) {
         if (c==0) next
-        sdC <- sdeviations[[c]]
-        newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]+sdC[1]) & newData[,2] < (clusterMeans[c,2]+sdC[2])))
-        #   # if (clusterMeans[c,1] < clusterMeans[c,2]) {
-        #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]+3*sdC[1]) & newData[,2] < (clusterMeans[c,2]-2*sdC[2]))) 
-        #   # } else {
-        #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]-2*sdC[1]) & newData[,2] < (clusterMeans[c,2]+3*sdC[2]))) 
-        #   # }
+        posEv <- which(mahalanobis(newData, clusterMeans[c,], S) < 0.2)
+        newData <- newData[-posEv,]
       } 
     } else {
       newData <- subset(data, !result %in% c(emptyDroplets,firstClusters,thirdClusters,fourthCluster))
     }
     for (c in secondClusters) {
       if (c==0) next
-      sdC <- sdeviations[[c]]
-      result[as.numeric(rownames(newData[(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
-                                          & newData[,2] < clusterMeans[c,2]+sdC[2] & newData[,2] > clusterMeans[c,2]-sdC[2]),]))] <- c
-      newData <- subset(newData, !(newData[,1] > clusterMeans[c,1]-sdC[1] & newData[,2] > clusterMeans[c,2]-sdC[2]))
+      posEv <- which(mahalanobis(newData, clusterMeans[c,], S) < 0.2)
+      result[as.numeric(rownames(newData[posEv,]))] <- c
+      newData <- newData[-posEv,]
     }
     if (nrow(newData) > 0) {
       i <- 1
@@ -1218,23 +1211,17 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
       newData <- subset(data, !result %in% c(emptyDroplets,firstClusters,fourthCluster))
       for (c in secondClusters) {
         if (c==0) next
-        sdC <- sdeviations[[c]]
-        newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]+sdC[1]) & newData[,2] < (clusterMeans[c,2]+sdC[2])))
-        #   # if (clusterMeans[c,1] < clusterMeans[c,2]) {
-        #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]+2*sdC[1]) & newData[,2] < (clusterMeans[c,2]-sdC[2]))) 
-        #   # } else {
-        #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]-sdC[1]) & newData[,2] < (clusterMeans[c,2]+2*sdC[2]))) 
-        #   # }
+        posEv <- which(mahalanobis(newData, clusterMeans[c,], S) < 0.2)
+        newData <- newData[-posEv,]
       }
     } else {
       newData <- subset(data, !result %in% c(emptyDroplets,firstClusters,secondClusters,fourthCluster))
     }
     for (c in thirdClusters) {
       if (c==0) next
-      sdC <- sdeviations[[c]]
-      result[as.numeric(rownames(newData[(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
-                                          & newData[,2] < clusterMeans[c,2]+sdC[2] & newData[,2] > clusterMeans[c,2]-sdC[2]),]))] <- c
-      newData <- subset(newData, !(newData[,1] > clusterMeans[c,1]-sdC[1] & newData[,2] > clusterMeans[c,2]-sdC[2]))
+      posEv <- which(mahalanobis(newData, clusterMeans[c,], S) < 0.2)
+      result[as.numeric(rownames(newData[posEv,]))] <- c
+      newData <- newData[-posEv,]
     }
     if (nrow(newData) > 0) {
       m <- matrix(nrow = nrow(newData), ncol = 3*length(thirdClusters))
@@ -1315,16 +1302,13 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
     }
     for (c in prevClusters) {
       if (c==0) next
-      sdC <- sdeviations[[c]]
-      newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]+sdC[1]) & newData[,2] < (clusterMeans[c,2]+sdC[2])))
+      posEv <- which(mahalanobis(newData, clusterMeans[c,], S) < 0.2)
+      newData <- newData[-posEv,]
     }
     for (c in fourthCluster) {
-      sdC <- 2*c(sd(data[result==c,1], na.rm = T), sd(data[result==c,2], na.rm = T))
-      if (is.na(sum(sdC))) next
-      result[as.numeric(rownames(newData[(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
-                                          & newData[,2] < clusterMeans[c,2]+sdC[2] & newData[,2] > clusterMeans[c,2]-sdC[2]),]))] <- c
-      newData <- subset(newData, !(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
-                                   & newData[,2] < clusterMeans[c,2]+sdC[2] & newData[,2] > clusterMeans[c,2]-sdC[2]))
+      posEv <- which(mahalanobis(newData, clusterMeans[c,], S) < 0.2)
+      result[as.numeric(rownames(newData[posEv,]))] <- c
+      newData <- newData[-posEv,]
     }
     if (nrow(newData) > 0) {
       m <- matrix(nrow = nrow(newData), ncol = length(prevClusters))
