@@ -1361,4 +1361,3 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
   }
   list(result=result, remove=unique(remove))
 }
-
