@@ -37,7 +37,7 @@ install_github("bgbrink/dropclust")
 ## Usage
 This package was written in close cooperation with the BC Cancer Agency in Vancouver, Canada. Please read their recently published [manuscript](https://doi.org/10.1371/journal.pone.0161274) for details on the background and how to produce the necessary data.
 
-The raw data should be *csv* files with two dimensions, each dimension representing the intensity for one color channel:
+The raw data should be *csv* files. Each file represents a two-dimensional data frame. Each row within the data frame represents a single droplet, each column the respective intensities per colour channel:
 
 Ch1 Amplitude | Ch2 Amplitude 
 --- | --- 
