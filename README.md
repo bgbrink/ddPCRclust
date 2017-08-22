@@ -37,7 +37,7 @@ install_github("bgbrink/dropclust")
 ## Usage
 This package was written in close cooperation with the BC Cancer Agency in Vancouver, Canada. Please read their recently published [manuscript](https://doi.org/10.1371/journal.pone.0161274) for details on the background and how to produce the necessary data.
 
-The raw data should be *csv* files with two dimensions, each dimension representing the intensity for one color channel:
+The raw data should be *csv* files. Each file represents a two-dimensional data frame. Each row within the data frame represents a single droplet, each column the respective intensities per colour channel:
 
 Ch1 Amplitude | Ch2 Amplitude 
 --- | --- 
@@ -77,17 +77,15 @@ All functions are documented. You can find additional information using the help
 ## License
     dropClust
     Copyright (C) 2017  Benedikt G. Brink, Bielefeld University
+                        BC Cancer Agency Branch (“BCCA”)
+                        
+    CAREFULLY READ THE FULL TERMS AND CONDITIONS INCLUDED IN THE FILE 'LICENSE'.  
+    
+    LICENSE TO USE: BCCA hereby grants to You a personal, non-exclusive, non-transferable, limited license 
+    to use the Product solely for internal, non-commercial use for non-profit research or educational purposes
+    only on the terms and conditions contained in this Agreement. The Product may be installed on a maximum of 
+    one machine per Qualified User at Your premises only.  A copy of the Product installed on a single common 
+    machine may be shared for internal use by Qualified Users only. In order to be a “Qualified User”, an 
+    individual must be a student, researcher, professor, instructor or staff member of a non-profit educational
+    institution or organization who uses the Product solely for non-profit research or educational purposes.
 
-    This program is free software; you can redistribute it and/or
-    modify it under the terms of the GNU General Public License
-    as published by the Free Software Foundation; either version 2
-    of the License, or (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
