@@ -35,7 +35,8 @@ library(R.utils)
 #'
 #' This is the main function of this package. It automatically runs the dropClust algorithm on one or multiple csv files containing the raw data from a ddPCR run with up to 4 markers. 
 #'
-#' @param files The input file(s). More specifically, csv files with two dimensions, each dimension representing one color choannel of the ddPCR reaction.
+#' @param files The input file(s), specifically csv files. Each file represents a two-dimensional data frame. 
+#' Each row within the data frame represents a single droplet, each column the respective intensities per colour channel.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up. Can be ignored if a template is provided. 
 #' Else, a vector with length equal to \code{length(files)} should be provided, containing the number of markers used for the respective reaction.
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.

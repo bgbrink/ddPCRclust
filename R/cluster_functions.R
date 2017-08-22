@@ -1,6 +1,6 @@
 ## Part of the dropClust algorithm
 ## Author: Benedikt G Brink, Bielefeld University
-## July 2017
+## August 2017
 
 # Find the primary clusters based on their density peaks found by flowDensity.
 findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {

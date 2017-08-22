@@ -8,7 +8,8 @@ runDropClust(files, numOfMarkers = 4, sensitivity = 1, template = NULL,
   fast = FALSE)
 }
 \arguments{
-\item{files}{The input file(s). More specifically, csv files with two dimensions, each dimension representing one color choannel of the ddPCR reaction.}
+\item{files}{The input file(s), specifically csv files. Each file represents a two-dimensional data frame. 
+Each row within the data frame represents a single droplet, each column the respective intensities per colour channel.}
 
 \item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up. Can be ignored if a template is provided. 
 Else, a vector with length equal to \code{length(files)} should be provided, containing the number of markers used for the respective reaction.}

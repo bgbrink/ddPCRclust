@@ -1,6 +1,6 @@
 ## Part of the dropClust algorithm
 ## Author: Benedikt G Brink, Bielefeld University
-## July 2017
+## August 2017
 
 #' @include cluster_functions.R
 #' @include functions.R
@@ -470,10 +470,11 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
 
 #' Calculates the copies per droplet
 #'
-#' This function takes the results of the clustering and calculates the actual counts per marker, as well as the counts per droplet (CPD) for each marker. 
+#' This function takes the results of the clustering and calculates the actual counts per target, as well as the counts per droplet (CPD) for each marker. 
 #'
 #' @param results The result of the dropClust algorithm.
-#' @param template A parsed dataframe containing the template.
+#' @param template The parsed dataframe containing the template.
+#' @param constantControl The constant refrence control, which should be present in each reaction. It is used to normalize the data.
 #' @return
 #' A list of lists, containing the counts for empty droplets, each marker with both total droplet count and CPD, and total number of droplets, for each element of the input list respectively. 
 #' @export
@@ -483,16 +484,22 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
 #' result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 #' 
 #' # Calculate the CPDs
-#' markerCPDs <- calculateCPDs(result$results, result$template)
+#' markerCPDs <- calculateCPDs(result$results, result$template, "M4")
 #'
-calculateCPDs <- function(results, template = NULL) {
+calculateCPDs <- function(results, template=NULL, constantControl=NULL) {
   countedResult <- list()
-
+  maxctrl <- 0
   for (i in 1:length(results)) {
     id <- names(results[i])
     result <- results[[i]]$counts
     if (is.null(result)) next
     markers <- as.character(unlist(template[which(template[,1] == id), 4:7]))
+    if (!is.null(constantControl)) {
+      sctrl <- which(markers == constantControl)
+      if (length(sctrl) != 1) {
+        stop("The constant control does not seem to be valid!")
+      }
+    }
     total <- as.integer(result[grep('Total', names(result))])
     empties <- as.integer(result[grep('Empties', names(result))])
     for (j in 1:4) {
@@ -509,10 +516,27 @@ calculateCPDs <- function(results, template = NULL) {
       } else {
         cpd <- -log(1-(counts/total))
       }
+      if (!is.null(constantControl)) {
+        if (j==sctrl && cpd > maxctrl) {
+          maxctrl <- cpd
+        } 
+      }
       countedResult[[id]][[marker]] <- list(counts=counts, cpd=cpd)
     }
     countedResult[[id]][["Empties"]] <- empties
     countedResult[[id]][["Total"]] <- total
+  }
+  # Normalize to constant control
+  if (!is.null(constantControl)) {
+    for(i in 1:length(countedResult)) {
+      id <- names(countedResult[i])
+      modFactor <- maxctrl/countedResult[[id]][[constantControl]]$cpd
+      markers <- as.character(unlist(template[which(template[,1] == id), 4:7]))
+      for (j in markers){
+        if (j == "") next
+        countedResult[[id]][[j]]$cpd <- countedResult[[id]][[j]]$cpd * modFactor
+      }
+    }
   }
   return(countedResult)
 }

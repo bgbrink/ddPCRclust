@@ -1,6 +1,6 @@
 ## Part of the dropClust algorithm
 ## Author: Benedikt G Brink, Bielefeld University
-## July 2017
+## August 2017
 
 # A collection of useful functions
 

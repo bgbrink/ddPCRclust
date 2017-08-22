@@ -4,18 +4,20 @@
 \alias{calculateCPDs}
 \title{Calculates the copies per droplet}
 \usage{
-calculateCPDs(results, template = NULL)
+calculateCPDs(results, template = NULL, constantControl = NULL)
 }
 \arguments{
 \item{results}{The result of the dropClust algorithm.}
 
-\item{template}{A parsed dataframe containing the template.}
+\item{template}{The parsed dataframe containing the template.}
+
+\item{constantControl}{The constant refrence control, which should be present in each reaction. It is used to normalize the data.}
 }
 \value{
 A list of lists, containing the counts for empty droplets, each marker with both total droplet count and CPD, and total number of droplets, for each element of the input list respectively.
 }
 \description{
-This function takes the results of the clustering and calculates the actual counts per marker, as well as the counts per droplet (CPD) for each marker.
+This function takes the results of the clustering and calculates the actual counts per target, as well as the counts per droplet (CPD) for each marker.
 }
 \examples{
 # Run dropClust
@@ -23,6 +25,6 @@ exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.n
 result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 
 # Calculate the CPDs
-markerCPDs <- calculateCPDs(result$results, result$template)
+markerCPDs <- calculateCPDs(result$results, result$template, "M4")
 
 }
