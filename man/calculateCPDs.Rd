@@ -25,6 +25,6 @@ exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.n
 result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
 
 # Calculate the CPDs
-markerCPDs <- calculateCPDs(result$results, result$template, "M4")
+markerCPDs <- calculateCPDs(result$results, result$template)
 
 }
