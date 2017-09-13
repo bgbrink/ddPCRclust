@@ -32,7 +32,12 @@ You can install this package like any other package from GitHub using devtools
 library(devtools)
 install_github("bgbrink/dropclust")
 ```
-**Disclaimer:** This method currently only works, when the GNU Scientific Library (GSL) is installed on your machine, because one of the dependencies (flowPeaks) needs it in order to compile. However, you can download this repository as a ZIP file and install the dropClust package manually, but you will need to download all the dependencies (check the DESCRIPTION file for a complete list) by hand from CRAN or Bioconductor, in which case you will get the compiled binary version of the flowPeaks package. If anyone knows how to make this the default behaviour for `install_github`, please share your wisdom [here](http://stackoverflow.com/questions/43634751/r-package-description-remotes-from-bioconductor-should-install-binary).
+**Disclaimer:** This method currently only works, when the GNU Scientific Library (GSL) is installed on your machine, because one of the dependencies (flowPeaks) needs it in order to compile. Otherwise you will have to install the packages from bioconductor manually before installing dropclust:
+```R
+## try http:// if https:// URLs are not supported
+source("https://bioconductor.org/biocLite.R")
+biocLite(c('flowDensity', 'SamSPECTRAL', 'flowPeaks'))
+```
 
 ## Usage
 This package was written in close cooperation with the BC Cancer Agency in Vancouver, Canada. Please read their recently published [manuscript](https://doi.org/10.1371/journal.pone.0161274) for details on the background and how to produce the necessary data.
