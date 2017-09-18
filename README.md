@@ -71,8 +71,8 @@ G07|Cell line|3|a||c|d
 G08|Cell line|3|a||c|d
 E09|FFPE|2|||c|d
 
-# Example Files
-We provide eight examplary example files under ```dropClust/inst/extdata/```
+### Example Files
+We provide eight examplary ddPCR files under ```dropClust/inst/extdata/```
 
 Run the algorithm using the provided examples with the following command:
 ```R
