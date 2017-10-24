@@ -15,11 +15,11 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
   repeat {
     tinyP <- tinyP/2
     if (tinyP < epsilon) break
-    leftPrim <-  deGate(f_remNeg_temp, 1, all.cut=T, tinypeak.removal=tinyP, adjust=0.1)[1]
+    leftPrim <-  deGate(f_remNeg_temp, 1, all.cuts=T, tinypeak.removal=tinyP, adjust.dens=0.1)[1]
     indices <- which(f_remNeg_temp@exprs[,1] <= leftPrim)
     f_leftPrim <- f_remNeg_temp; f_leftPrim@exprs <- f_leftPrim@exprs[indices,]
-    x_leftPrim <- max(flowDensity:::.getPeaks(density(f_leftPrim@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks)
-    y_leftPrim <- max(flowDensity:::.getPeaks(density(f_leftPrim@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks)
+    x_leftPrim <- max(flowDensity::.getPeaks(density(f_leftPrim@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks)
+    y_leftPrim <- max(flowDensity::.getPeaks(density(f_leftPrim@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks)
     if (x_leftPrim < (min(File[,1]) + (max(File[,1])-min(File[,1]))/6)) {
       threshold <- tinyP
       break
@@ -30,11 +30,11 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
   repeat{
     tinyP <- tinyP/2
     if (tinyP < epsilon) break
-    rightPrim <- deGate(f_remNeg_temp, 2, all.cut=T, tinypeak.removal=tinyP, adjust=0.1)[1]
+    rightPrim <- deGate(f_remNeg_temp, 2, all.cuts=T, tinypeak.removal=tinyP, adjust.dens=0.1)[1]
     indices <- which(f_remNeg_temp@exprs[,2] <= rightPrim)
     f_rightPrim <- f_remNeg_temp; f_rightPrim@exprs <- f_rightPrim@exprs[indices,]
-    x_rightPrim <- max(flowDensity:::.getPeaks(density(f_rightPrim@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks)
-    y_rightPrim <- max(flowDensity:::.getPeaks(density(f_rightPrim@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks)
+    x_rightPrim <- max(flowDensity::.getPeaks(density(f_rightPrim@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks)
+    y_rightPrim <- max(flowDensity::.getPeaks(density(f_rightPrim@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks)
     if (y_rightPrim < (min(File[,2]) + (max(File[,2])-min(File[,2]))/6)) {
       threshold <- min(threshold, tinyP)
       break
@@ -63,7 +63,7 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
   repeat { # newton iteration
     newP <- (highP+lowP)/2
     if (newP < 2*epsilon) break
-    Cuts <- deGate(f_remNeg_temp, 1, all.cut=T, tinypeak.removal=newP, adjust=0.1)
+    Cuts <- deGate(f_remNeg_temp, 1, all.cuts=T, tinypeak.removal=newP, adjust.dens=0.1)
     if (length(Cuts) < (NumOfMarkers - 1)){
       highP <- newP
     } else if (length(Cuts) > (NumOfMarkers - 1)) {
@@ -82,16 +82,16 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
     indices <- intersect(which(f_remNeg_temp@exprs[,1] >= Cuts[r1]), which(f_remNeg_temp@exprs[,1] < Cuts[r1+1]))
     f_Cuts_temp <- f_remNeg_temp; f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices,]
     f_Cuts_temp@exprs[,c(1,2)] <- t(t(R) %*% t(f_Cuts_temp@exprs[,c(1,2)]))
-    Xx <- flowDensity:::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
-    Yy <- flowDensity:::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
+    Xx <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
+    Yy <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
     if (length(Xx) > 1 || length(Yy) > 1) {
       highP <- 1
       lowP <- 0
       repeat { # newton iteration
         newP <- (highP+lowP)/2
         if (newP < epsilon) break
-        Xx <- flowDensity:::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
-        Yy <- flowDensity:::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
+        Xx <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
+        Yy <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
         if (length(Xx) > 1 || length(Yy) > 1){
           highP <- newP
         } else if (length(Xx) < 1 || length(Yy) < 1) {
@@ -159,7 +159,7 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
           f_rotate_tinyP_temp <- f_remNegPrim_chopTertQuat
           R <- matrix( c(cos(theta), sin(theta), -sin(theta), cos(theta)) ,2 ,2)
           f_rotate_tinyP_temp@exprs[,c(1,2)] <- t(R %*% t(f_rotate_tinyP_temp@exprs[,c(1,2)]))
-          Cuts <- deGate(f_rotate_tinyP_temp, 1, all.cut=T, tinypeak.removal=tinyP, adjust.dens=adjustDens)
+          Cuts <- deGate(f_rotate_tinyP_temp, 1, all.cuts=T, tinypeak.removal=tinyP, adjust.dens=adjustDens)
           if (length(Cuts) == (choose(NumberOfSinglePos, 2) - 1) ) break;
           if (theta >= pi/2) break;
           theta <- theta + pi/16
@@ -230,7 +230,7 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
           message(paste0("Error finding X value for peak ", r1, " of ", choose(NumberOfSinglePos, 2)))
           break
         }
-        Xx <- flowDensity:::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=tinyPXx)$Peaks
+        Xx <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=tinyPXx)$Peaks
         if ( length (Xx) > 1 ) {
           lowPXx <- tinyPXx
         } else if (length (Xx) < 1) {
@@ -248,7 +248,7 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
           message(paste0("Error finding Y value for peak ", r1, " of ", choose(NumberOfSinglePos, 2)))
           break
         }
-        Yy <- flowDensity:::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=tinyPYy)$Peaks
+        Yy <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=tinyPYy)$Peaks
         if ( length (Yy) > 1 ) {
           lowPYy <- tinyPYy
         } else if (length (Yy) < 1) {
@@ -317,7 +317,7 @@ findTertiaryClustersDensity <- function(f, f_remNegPrimSec, emptyDroplets, first
     lowP <- 0
     repeat { # newton iteration
       newP <- (highP+lowP)/2
-      Cuts <- deGate(f_remNegPrimSec, 1, all.cut=T, tinypeak.removal=newP, adjust=0.1)
+      Cuts <- deGate(f_remNegPrimSec, 1, all.cuts=T, tinypeak.removal=newP, adjust.dens=0.1)
       if (length(Cuts) < (NumberOfSinglePos - 1)){
         highP <- newP
       } else if (length(Cuts) > (NumberOfSinglePos - 1)) {
@@ -387,7 +387,7 @@ findTertiaryClustersDensity <- function(f, f_remNegPrimSec, emptyDroplets, first
           message(paste0("Default X value for tertiary peak ", r1, " of 4"))
           break
         }
-        Xx <- flowDensity:::.getPeaks(density(f_remNegPrimSec_temp@exprs[,1], width=1000), tinypeak.removal=tinyPXx)$Peaks
+        Xx <- flowDensity::.getPeaks(density(f_remNegPrimSec_temp@exprs[,1], width=1000), tinypeak.removal=tinyPXx)$Peaks
         if ( length (Xx) > 1 ) {
           lowPXx <- tinyPXx
         } else if (length (Xx) < 1) {
@@ -405,7 +405,7 @@ findTertiaryClustersDensity <- function(f, f_remNegPrimSec, emptyDroplets, first
           message(paste0("Default Y value for tertiary peak ", r1, " of 4"))
           break
         }
-        Yy <- flowDensity:::.getPeaks(density(f_remNegPrimSec_temp@exprs[,2], width=1000), tinypeak.removal=tinyPYy)$Peaks
+        Yy <- flowDensity::.getPeaks(density(f_remNegPrimSec_temp@exprs[,2], width=1000), tinypeak.removal=tinyPYy)$Peaks
         if ( length (Yy) > 1 ) {
           lowPYy <- tinyPYy
         } else if (length (Yy) < 1) {
@@ -482,7 +482,7 @@ findQuaternaryClusterDensity <- function(f, f_onlyQuad, emptyDroplets, firstClus
     lowP <- 0
     repeat{
       tinyP <- (highP+lowP)/2
-      XcQuad <- flowDensity:::.getPeaks(density(f_onlyQuad@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks
+      XcQuad <- flowDensity::.getPeaks(density(f_onlyQuad@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks
       if (length(XcQuad) < 1 ) {
         highP <- tinyP
       } else if (length(XcQuad) > 1){
@@ -495,7 +495,7 @@ findQuaternaryClusterDensity <- function(f, f_onlyQuad, emptyDroplets, firstClus
     lowP <- 0
     repeat{
       tinyP <- (highP+lowP)/2
-      YcQuad <- flowDensity:::.getPeaks(density(f_onlyQuad@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks
+      YcQuad <- flowDensity::.getPeaks(density(f_onlyQuad@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks
       if (length(YcQuad) < 1 ) {
         highP <- tinyP
       } else if (length(YcQuad) > 1){
@@ -642,7 +642,7 @@ findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dim
   repeat { # newton iteration
     newP <- (highP+lowP)/2
     if (newP < 2*epsilon) break
-    Cuts <- deGate(f_remNeg_temp, 1, all.cut=T, tinypeak.removal=newP, adjust=0.1)
+    Cuts <- deGate(f_remNeg_temp, 1, all.cuts=T, tinypeak.removal=newP, adjust.dens=0.1)
     if (length(Cuts) < (NumberOfSinglePos - 1)){
       highP <- newP
     } else if (length(Cuts) > (NumberOfSinglePos - 1)) {
@@ -659,16 +659,16 @@ findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dim
     indices <- intersect(which(f_remNeg_temp@exprs[,1] >= Cuts[r1]), which(f_remNeg_temp@exprs[,1] < Cuts[r1+1]))
     f_Cuts_temp <- f_remNeg_temp; f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices,]
     f_Cuts_temp@exprs[,c(1,2)] <- t(t(R) %*% t(f_Cuts_temp@exprs[,c(1,2)]))
-    Xx <- flowDensity:::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
-    Yy <- flowDensity:::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
+    Xx <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
+    Yy <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
     if (length(Xx) > 1 || length(Yy) > 1) {
       highP <- 1
       lowP <- 0
       repeat { # newton iteration
         newP <- (highP+lowP)/2
         if (newP < epsilon) break
-        Xx <- flowDensity:::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
-        Yy <- flowDensity:::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
+        Xx <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
+        Yy <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
         if (length(Xx) > 1 || length(Yy) > 1){
           highP <- newP
         } else if (length(Xx) < 1 || length(Yy) < 1) {
@@ -1038,12 +1038,12 @@ mergeClusters <- function(result, clusterMeans, finalResult, remove, p = 12) {
 # Adjust the cluster centres based on the local density function
 adjustClusterMeans <- function(data, clusterMeans, result, clusters) {
   data_dir <- system.file("extdata", package = "flowDensity")
-  load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
+  load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
   for (i in clusters) {
     if(i == 0) next
     f@exprs <- as.matrix(data[result == i,])
-    Xc <- flowDensity:::.getPeaks(density(f@exprs[,1], width=1000), tinypeak.removal=0.2)$Peaks[1]
-    Yc <- flowDensity:::.getPeaks(density(f@exprs[,2], width=1000), tinypeak.removal=0.2)$Peaks[1]
+    Xc <- flowDensity::.getPeaks(density(f@exprs[,1], width=1000), tinypeak.removal=0.2)$Peaks[1]
+    Yc <- flowDensity::.getPeaks(density(f@exprs[,2], width=1000), tinypeak.removal=0.2)$Peaks[1]
     if(!is.null(Xc) && !is.null(Yc)) {
       clusterMeans[i,] <- c(Xc, Yc)
     }

@@ -25,13 +25,16 @@ runDensity(file, sensitivity = 1, numOfMarkers, missingClusters = NULL)
 Use the local density function of the flowDensity package to find the cluster centres of the ddPCR reaction. Clusters are then labelled based on their rotated position and lastly the rain is assigned.
 }
 \examples{
+# Run the flowDensity based approach
 exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
 file <- read.csv(exampleFiles[3])
 densResult <- runDensity(file = file, numOfMarkers = 4)
 
+# Plot the results
 library(ggplot2)
 p <- ggplot(data = densResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
-p <- p+geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)+ggtitle("flowDensity example")+theme_bw()+theme(legend.position="none")
+p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)
+       + ggtitle("flowDensity example")+theme_bw() + theme(legend.position="none")
 p
 
 }

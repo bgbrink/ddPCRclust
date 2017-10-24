@@ -1,0 +1,143 @@
+%\VignetteIndexEntry{Bioconductor LaTeX Style}
+%\VignettePackage{BiocStyle}
+%\VignetteEngine{utils::Sweave}
+
+\documentclass{article}
+\usepackage{amsmath}
+
+\RequirePackage{/Library/Frameworks/R.framework/Versions/3.4/Resources/library/BiocStyle/resources/tex/Bioconductor}
+
+\AtBeginDocument{\bibliographystyle{/Library/Frameworks/R.framework/Versions/3.4/Resources/library/BiocStyle/resources/tex/unsrturl}}
+\newcommand{\exitem}[3]{%
+  \item \texttt{\textbackslash#1\{#2\}} #3 \csname#1\endcsname{#2}.%
+}
+
+\title{dropClust --- An R package and Shiny app for automated analysis of multiplexed ddPCR data}
+\author{Benedikt G. Brink, Justin Meskas, Ryan R. Brinkman}
+
+
+\usepackage{Sweave}
+\begin{document}
+\input{dropClust-concordance}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+Droplet digital PCR (ddPCR) is an emerging technology for quantifying DNA. By partitioning the target DNA into $\sim\,$20$\,$000 droplets, each serving as its own PCR reaction compartment, ddPCR has significantly increased sensitivity compared to other technologies for DNA quantification. However, manual analysis of the data is time consuming and algorithms for automated analysis of non-orthogonal, multiplexed ddPCR data are unavailable, presenting a major bottleneck for the advancement of ddPCR transitioning from low-throughput to high-throughput. During a ddPCR run, each genetic target is fluorescently labeled with a combination of two fluorophores (typically HEX and FAM), giving it a unique footprint in a two-dimensional space represented by the intensities per color channel. The position of each droplet within this space reveals how many and, more importantly, which genetic targets it contains. Thus, droplets that contain the same targets cluster together. The number of positive droplets for each target determine its abundance. 
+
+dropClust is an R package for automated analysis of multiplexed ddPCR data. It can automatically analyse and visualise multiplexed ddPCR experiments with up to four targets per reaction. Results are on par with manual analysis, but only take minutes to compute instead of hours. The accompanying Shiny app dropVis provides easy access to the functionalities of dropClust through a web-browser based GUI.
+
+\section{Installation}
+The algorithm was implemented in R and can be installed as a package. You can install this package like any other package from GitHub using devtools:
+
+\begin{verbatim}
+library(devtools)
+install_github("bgbrink/dropclust")
+\end{verbatim}
+
+\textbf{Disclaimer:} This method currently only works, when the GNU Scientific Library (GSL) is installed on your machine, because one of the dependencies (flowPeaks) needs it in order to compile. Otherwise you will have to install the packages from bioconductor manually before installing dropclust:
+
+\begin{verbatim}
+## try http:// if https:// URLs are not supported
+source("https://bioconductor.org/biocLite.R")
+biocLite(c('flowDensity', 'SamSPECTRAL', 'flowPeaks'))
+\end{verbatim}
+
+\section{Usage}
+The main function of the package is \Rfunction{runDropClust}. This function runs the algorithm with one or multiple files, automatically distributing them among all CPU cores (no paralellisation on Windows). We provide eight exemplary ddPCR files along with this package. Analyze them using the following commands.
+
+\begin{verbatim}
+# Run dropClust
+exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
+\end{verbatim}
+
+\subsection{Input data}
+The input data are one or multiple CSV files containing the raw data from Bio-Rad ddPCR experiments. Each file can be represented as a two-dimensional data frame. Each row within the data frame represents a single droplet, each column the respective intensities per colour channel. Additional columns will be omitted.
+
+\subsection{Clustering}
+The initial clustering is based on three different approaches; flowDensity \cite{malek2015flowdensity}, SamSPECTRAL \cite{zare2010data}, and flowPeaks \cite{ge2012flowpeaks}. Each approach has its own function within dropClust, if users need more granular control.
+
+\subsubsection{flowDensity}
+Originally designed for gating of flow cytometry data, \emph{flowDensity} identifies cell populations in a dataset using characteristics of the density distribution (e.g. the number, height and width of peaks and the slope of the distribution curve). Parameters can be adjusted on a population-specific basis. We use the density function to find local peaks above a threshold, which represent the centers of clusters.The method comprises the following steps:
+\begin{enumerate}
+\item Remove all $x$ where $(x_1,x_2)$ < 0.125$\,\cdot\,max(x_1,x_2)$. The bottom 12.5$\,\%$ of the data space is known to contain the negative population, i.e. the droplets without any of the targets of interest.
+\item Find the highest density peaks with $max(x_1)$ and $max(x_2)$, respectively. I define these as the two outer primary clusters $y$ and $z$, since the primary clusters empirically contain the majority of the non-negative events. 
+\item Rotate the data with $\theta = \lvert atan(\frac{y_2 - z_2}{y_1 - z_1}) \rvert$.
+\item Cut the rotated data above the two outer clusters in a staircase manner and find all density peaks.
+\item Take the previously removed data and repeat steps 2 and 4, until all clusters are found.
+\end{enumerate}
+Clusters are then labelled based on their rotated position and lastly the rain is assigned.
+
+We provide eight exemplary ddPCR files along with this package. Analyze one of them using the following commands.
+\begin{verbatim}
+# Run the flowDensity based approach
+exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+file <- read.csv(exampleFiles[3])
+densResult <- runDensity(file = file, numOfMarkers = 4)
+
+# Plot the results
+library(ggplot2)
+p <- ggplot(data = densResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)
+       + ggtitle("flowDensity example")+theme_bw() + theme(legend.position="none")
+p
+\end{verbatim}
+
+\subsubsection{SamSPECTRAL}
+Since spectral clustering is computationally expensive ($\mathcal{O}(n^3)$ time and $\mathcal{O}(n^2)$ space), \emph{SamSPECTRAL} uses density based pre-processing to reduce the number of edges in the graph. To do so, a faithful sampling algorithm builds $m$ communities, which are then connected to a graph where the edges represent the similarity between corresponding communities. The spectrum of this graph is subsequently analyzed using classical spectral clustering to find the clusters. Finally, the clusters are combined based on their similarity in the community graph and a cluster number for each event in the original data is returned. We use this implementation of spectral clustering and choose $m$ encompassing 5$\,$\% of the data, which has empirically proven to be a good compromise between accuracy and speed. However, users can choose a different value if necessary.
+
+We provide eight exemplary ddPCR files along with this package. Analyze one of them using the following commands.
+\begin{verbatim}
+# Run the SamSPECTRAL based approach
+exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+file <- read.csv(exampleFiles[3])
+samResult <- runSam(file = file, numOfMarkers = 4)
+
+# Plot the results
+library(ggplot2)
+p <- ggplot(data = samResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)
+       + ggtitle("SamSPECTRAL example")+theme_bw() + theme(legend.position="none")
+p
+\end{verbatim}
+
+\subsubsection{flowPeaks}
+The third approach uses the \emph{flowPeaks}Peaks package \cite{ge2012flowpeaks}. The \emph{flowPeaks} algorithm first uses a two step k-means clustering with a large k, in order to partition the dataset into many compact clusters.
+The result is then used to generate a smoothed density function.
+All local peaks are exhaustively found by exploring the density function and the clusters are merged according to their local peaks. 
+
+We provide eight exemplary ddPCR files along with this package. Analyze one of them using the following commands.
+\begin{verbatim}
+# Run the flowPeaks based approach
+exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
+file <- read.csv(exampleFiles[3])
+peaksResult <- runPeaks(file = file, numOfMarkers = 4)
+
+# Plot the results
+library(ggplot2)
+p <- ggplot(data = peaksResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T) 
+       + ggtitle("flowPeaks example")+theme_bw() + theme(legend.position="none")
+p
+\end{verbatim}
+
+
+
+
+\subsection{Copies per droplet:}
+Once all droplets are correctly assigned, the actual copies per droplet (CPDs) for each target are calculated by the function \texttt{calculateCPDs} according to Equation \ref{eq:cpd},
+\begin{equation}\label{eq:cpd}
+CPD_i = -ln(1-\frac{C_i}{C_T})
+\end{equation}
+where $C_i$ is the total number of positive droplets for target $i$ and $C_T$ the total droplet count.
+
+\subsection{Exporting results:}
+The results can be exported using \Rfunction{exportPlots}, \Rfunction{exportToExcel}, and \Rfunction{exportToCSV}. 
+
+\bibliography{dropClust}
+
+\end{document}

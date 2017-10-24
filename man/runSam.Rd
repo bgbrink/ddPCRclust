@@ -25,13 +25,16 @@ runSam(file, sensitivity = 1, numOfMarkers, missingClusters = NULL)
 Find the rain and assign it based on the distance to vector lines connecting the cluster centres.
 }
 \examples{
+# Run the SamSPECTRAL based approach
 exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
 file <- read.csv(exampleFiles[3])
 samResult <- runSam(file = file, numOfMarkers = 4)
 
+# Plot the results
 library(ggplot2)
 p <- ggplot(data = samResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
-p <- p+geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)+ggtitle("SamSPECTRAL example")+theme_bw()+theme(legend.position="none")
+p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)
+       + ggtitle("SamSPECTRAL example")+theme_bw() + theme(legend.position="none")
 p
 
 }

@@ -31,13 +31,16 @@ library(clue)
 #' @import flowDensity clue
 #' @export
 #' @examples
+#' # Run the flowDensity based approach
 #' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
 #' file <- read.csv(exampleFiles[3])
 #' densResult <- runDensity(file = file, numOfMarkers = 4)
 #' 
+#' # Plot the results
 #' library(ggplot2)
 #' p <- ggplot(data = densResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
-#' p <- p+geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)+ggtitle("flowDensity example")+theme_bw()+theme(legend.position="none")
+#' p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)
+#'        + ggtitle("flowDensity example")+theme_bw() + theme(legend.position="none")
 #' p
 #' 
 runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) {
@@ -50,7 +53,7 @@ runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) 
   # *************************
   
   data_dir <- system.file("extdata", package = "flowDensity")
-  load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
+  load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
   
   f@exprs <- as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
   #file <- file[,c(2,1)] # switch axis to be consistent
@@ -69,8 +72,8 @@ runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) 
   f_onlyNeg <- f; f_onlyNeg@exprs <- f_onlyNeg@exprs[-indices,] # keep the     15% bottom left corner
   
   # coordinates of negative populations
-  XcN <- flowDensity:::.getPeaks(density(f_onlyNeg@exprs[,1], width=1000), tinypeak.removal=0.2)$Peaks[1]
-  YcN <- flowDensity:::.getPeaks(density(f_onlyNeg@exprs[,2], width=1000), tinypeak.removal=0.2)$Peaks[1]
+  XcN <- flowDensity::.getPeaks(density(f_onlyNeg@exprs[,1], width=1000), tinypeak.removal=0.2)$Peaks[1]
+  YcN <- flowDensity::.getPeaks(density(f_onlyNeg@exprs[,2], width=1000), tinypeak.removal=0.2)$Peaks[1]
   
   emptyDroplets <- c(XcN, YcN)
   firstClusters <- secondClusters <- tertClusters <- quadCluster <- NULL
@@ -238,13 +241,16 @@ runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) 
 #' @export
 #' @import SamSPECTRAL flowDensity clue
 #' @examples
+#' # Run the SamSPECTRAL based approach
 #' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
 #' file <- read.csv(exampleFiles[3])
 #' samResult <- runSam(file = file, numOfMarkers = 4)
 #' 
+#' # Plot the results
 #' library(ggplot2)
 #' p <- ggplot(data = samResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
-#' p <- p+geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)+ggtitle("SamSPECTRAL example")+theme_bw()+theme(legend.position="none")
+#' p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)
+#'        + ggtitle("SamSPECTRAL example")+theme_bw() + theme(legend.position="none")
 #' p
 #' 
 runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) {
@@ -258,7 +264,7 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) 
   # *************************
   
   data_dir <- system.file("extdata", package = "flowDensity")
-  load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
+  load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
   
   f@exprs <- as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
 
@@ -368,13 +374,16 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) 
 #' @import flowPeaks flowDensity clue
 #' @export
 #' @examples
+#' # Run the flowPeaks based approach
 #' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
 #' file <- read.csv(exampleFiles[3])
 #' peaksResult <- runPeaks(file = file, numOfMarkers = 4)
 #' 
+#' # Plot the results
 #' library(ggplot2)
 #' p <- ggplot(data = peaksResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
-#' p <- p+geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T)+ggtitle("flowPeaks example")+theme_bw()+theme(legend.position="none")
+#' p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = T) 
+#'        + ggtitle("flowPeaks example")+theme_bw() + theme(legend.position="none")
 #' p
 #' 
 runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) {
@@ -387,7 +396,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
   # *************************
   
   data_dir <- system.file("extdata", package = "flowDensity")
-  load(list.files(pattern = 'sampleFCS_1', data_dir, full = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
+  load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
   
   f@exprs <- as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
   
