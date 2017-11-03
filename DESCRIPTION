@@ -27,6 +27,6 @@ Collate:
     'ddPCR.R'
     'dropClust.R'
     'global.R'
-License: LICENSE
+License: file LICENSE
 URL: https://github.com/bgbrink/dropClust
 RoxygenNote: 6.0.1
