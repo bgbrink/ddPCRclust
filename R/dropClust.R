@@ -26,10 +26,19 @@
 #' @name dropClust
 "_PACKAGE"
 #> [1] "_PACKAGE"
+library(stats)
+library(utils)
 library(parallel)
 library(ggplot2)
 library(openxlsx)
 library(R.utils)
+
+# ****** Parameters *******
+scalingParam <<- vector()
+CutAbovePrimary <<- vector()
+epsilon <<- vector()
+threshold <<- vector()
+# *************************
 
 #' Run the dropClust algorithm
 #'
@@ -88,7 +97,7 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
           names(annotations) <- c("Name", "Ch1", "Ch2", "Descriptions")
         }
       }
-      template <- read.csv(template, skip = 1)
+      template <- utils::read.csv(template, skip = 1)
       numOfMarkers <- lapply(ids, function(x) {unlist(template[which(template[,1] == x), 3])})
       markerNames <- lapply(ids, function(x) {unlist(template[which(template[,1] == x), 4:7])})
     } else {
@@ -104,7 +113,7 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
   dens_result <- sam_result <- peaks_result <- rep(0, length(files))
   names(dens_result) <- names(sam_result) <- names(peaks_result) <- ids
   if(length(files)>1) {
-    csvFiles <- mclapply(files, read.csv, mc.cores = nrOfCores)
+    csvFiles <- mclapply(files, utils::read.csv, mc.cores = nrOfCores)
     names(csvFiles) <- ids
     dens_result <- mcmapply(dens_wrapper, file=csvFiles, numOfMarkers=numOfMarkers, sensitivity=sensitivity, markerNames=markerNames, SIMPLIFY = F, mc.cores = nrOfCores)
     if (!fast) {
@@ -113,7 +122,7 @@ runDropClust <- function(files, numOfMarkers = 4, sensitivity = 1, template = NU
     }
     superResults <- mcmapply(ensemble_wrapper, dens_result, sam_result, peaks_result, csvFiles, SIMPLIFY = F, mc.cores = nrOfCores)
   } else {
-    csvFiles <- read.csv(files)
+    csvFiles <- utils::read.csv(files)
     dens_result <- dens_wrapper(file=csvFiles, numOfMarkers=numOfMarkers[[1]], sensitivity=sensitivity, markerNames = markerNames[[1]])
     if (!fast) {
       sam_result <- sam_wrapper(file=csvFiles, numOfMarkers=numOfMarkers[[1]], sensitivity=sensitivity, markerNames = markerNames[[1]])
@@ -283,14 +292,14 @@ exportToCSV <- function(data, directory, annotations, raw = FALSE) {
     }
     if (raw) {
       file <- paste0(directory,"/",annotations[1],"/", id, "_annotated_raw.csv")
-      write.csv(result$data, file = file)
+      utils::write.csv(result$data, file = file)
     }
   }
   mynames <- c("Empties","1","2","3","4","1+2","1+3","1+4","2+3","2+4","3+4","1+2+3","1+2+4","1+3+4","2+3+4","1+2+3+4","Removed","Total","Confidence")
   dataToWrite <- t(dataToWrite[,match(mynames, colnames(dataToWrite))])
   colnames(dataToWrite) <- names(data)
   file <- paste0(directory,"/",annotations[1],"/", annotations[1], "_results.csv")
-  write.csv(dataToWrite, file = file)
+  utils::write.csv(dataToWrite, file = file)
 }
 
 # wrapper function for exception handling in mcmapply

@@ -2,8 +2,8 @@
 % Please edit documentation in R/dropClust.R
 \docType{package}
 \name{dropClust}
-\alias{dropClust}
-\alias{dropClust-package}
+\alias{ddPCRClust}
+\alias{ddPCRClust-package}
 \alias{dropClust-package}
 \title{dropClust 
 A package for automated quantification of multiplexed ddPCR data}

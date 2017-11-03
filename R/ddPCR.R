@@ -72,8 +72,8 @@ runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) 
   f_onlyNeg <- f; f_onlyNeg@exprs <- f_onlyNeg@exprs[-indices,] # keep the     15% bottom left corner
   
   # coordinates of negative populations
-  XcN <- flowDensity::.getPeaks(density(f_onlyNeg@exprs[,1], width=1000), tinypeak.removal=0.2)$Peaks[1]
-  YcN <- flowDensity::.getPeaks(density(f_onlyNeg@exprs[,2], width=1000), tinypeak.removal=0.2)$Peaks[1]
+  XcN <- flowDensity::.getPeaks(stats::density(f_onlyNeg@exprs[,1], width=1000), tinypeak.removal=0.2)$Peaks[1]
+  YcN <- flowDensity::.getPeaks(stats::density(f_onlyNeg@exprs[,2], width=1000), tinypeak.removal=0.2)$Peaks[1]
   
   emptyDroplets <- c(XcN, YcN)
   firstClusters <- secondClusters <- tertClusters <- quadCluster <- NULL
@@ -146,15 +146,15 @@ runDensity <- function(file, sensitivity=1, numOfMarkers, missingClusters=NULL) 
   ClusterCentres <- rbind(emptyDroplets, firstClusters$clusters)
   posOfSeconds <- posOfThirds <- posOfFourth <- NULL
   if (length(secondClusters$clusters) > 0) {
-    posOfSeconds <- (tail(posOfFirsts, 1)+1):(tail(posOfFirsts, 1)+nrow(secondClusters$clusters))
+    posOfSeconds <- (utils::tail(posOfFirsts, 1)+1):(utils::tail(posOfFirsts, 1)+nrow(secondClusters$clusters))
     ClusterCentres <- rbind(ClusterCentres, secondClusters$clusters)
   }
   if (length(tertClusters$clusters) > 0) {
-    posOfThirds <- (tail(posOfSeconds, 1)+1):(tail(posOfSeconds, 1)+nrow(tertClusters$clusters))
+    posOfThirds <- (utils::tail(posOfSeconds, 1)+1):(utils::tail(posOfSeconds, 1)+nrow(tertClusters$clusters))
     ClusterCentres <- rbind(ClusterCentres, tertClusters$clusters)
   }
   if (length(quadCluster$clusters) > 0) {
-    posOfFourth <- max((tail(posOfFirsts, 1)+1), (tail(posOfSeconds, 1)+1), (tail(posOfThirds, 1)+1), na.rm = T)
+    posOfFourth <- max((utils::tail(posOfFirsts, 1)+1), (utils::tail(posOfSeconds, 1)+1), (utils::tail(posOfThirds, 1)+1), na.rm = T)
     ClusterCentres <- rbind(ClusterCentres, abs(quadCluster$clusters))
   }
 
@@ -271,12 +271,12 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL) 
   #### Start of algorithm ####
   samRes <- SamSPECTRAL(data.points=as.matrix(file),dimensions=c(1,2), normal.sigma = (400*sensitivity^2), separation.factor = (0.88*sensitivity), m = m, talk=F)
   data <- file
-  temp <- lapply(min(samRes, na.rm = T):max(samRes, na.rm = T), function(x) return(apply(data[samRes==x,], 2, median, na.rm = T)))
+  temp <- lapply(min(samRes, na.rm = T):max(samRes, na.rm = T), function(x) return(apply(data[samRes==x,], 2, stats::median, na.rm = T)))
   clusterMeans <- t(do.call(cbind, temp))
   rowSums <- sapply(1:nrow(clusterMeans), function(x) return(sum(clusterMeans[x,])))
   emptyDroplets <- match(min(rowSums), rowSums)
   dimensions <- c(max(data[1]), max(data[2]))
-  temp <- sapply(min(samRes, na.rm = T):max(samRes, na.rm = T), function(x) return(abs(var(data[samRes==x,1], data[samRes==x,2], na.rm = T))))
+  temp <- sapply(min(samRes, na.rm = T):max(samRes, na.rm = T), function(x) return(abs(stats::var(data[samRes==x,1], data[samRes==x,2], na.rm = T))))
   badClusters <- match(temp[temp>sum(dimensions)*25], temp)
   samTable <- table(samRes)
   secondaryClusters <- tertiaryClusters <- quaternaryCluster <- NULL
@@ -407,7 +407,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
   rowSums <- sapply(1:nrow(clusterMeans), function(x) return(sum(clusterMeans[x,])))
   emptyDroplets <- match(min(rowSums), rowSums)
   dimensions <- c(max(data[1]), max(data[2]))
-  temp <- sapply(min(fPeaksRes$peaks.cluster, na.rm = T):max(fPeaksRes$peaks.cluster, na.rm = T), function(x) return(abs(var(data[fPeaksRes$peaks.cluster==x,1], data[fPeaksRes$peaks.cluster==x,2], na.rm = T))))
+  temp <- sapply(min(fPeaksRes$peaks.cluster, na.rm = T):max(fPeaksRes$peaks.cluster, na.rm = T), function(x) return(abs(stats::var(data[fPeaksRes$peaks.cluster==x,1], data[fPeaksRes$peaks.cluster==x,2], na.rm = T))))
   badClusters <- match(temp[temp>sum(dimensions)*25], temp)
   fPeaksTable <- table(fPeaksRes$peaks.cluster)
   secondaryClusters <- tertiaryClusters <- quaternaryCluster <- NULL
@@ -619,7 +619,6 @@ createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, file) {
 #' @param stableControl The name of the stable Control used as a reference for this experiment.
 #' @return
 #' A linear regression model fitting the length vs ln(ratio) (see \link{lm} for details on linear regression).
-#' @export
 #' @examples
 #' # Run dropClust
 #' exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
@@ -644,5 +643,5 @@ shearCorrection <- function(counts, lengthControl, stableControl) {
     controlRatios <- rbind(controlRatios, as.numeric(c(len, ratio)))
   }
   colnames(controlRatios) <- c("Length", "Ratio")
-  lm(Ratio ~ Length, controlRatios)
+  stats::lm(Ratio ~ Length, controlRatios)
 }

@@ -18,8 +18,8 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
     leftPrim <-  deGate(f_remNeg_temp, 1, all.cuts=T, tinypeak.removal=tinyP, adjust.dens=0.1)[1]
     indices <- which(f_remNeg_temp@exprs[,1] <= leftPrim)
     f_leftPrim <- f_remNeg_temp; f_leftPrim@exprs <- f_leftPrim@exprs[indices,]
-    x_leftPrim <- max(flowDensity::.getPeaks(density(f_leftPrim@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks)
-    y_leftPrim <- max(flowDensity::.getPeaks(density(f_leftPrim@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks)
+    x_leftPrim <- max(flowDensity::.getPeaks(stats::density(f_leftPrim@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks)
+    y_leftPrim <- max(flowDensity::.getPeaks(stats::density(f_leftPrim@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks)
     if (x_leftPrim < (min(File[,1]) + (max(File[,1])-min(File[,1]))/6)) {
       threshold <- tinyP
       break
@@ -33,8 +33,8 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
     rightPrim <- deGate(f_remNeg_temp, 2, all.cuts=T, tinypeak.removal=tinyP, adjust.dens=0.1)[1]
     indices <- which(f_remNeg_temp@exprs[,2] <= rightPrim)
     f_rightPrim <- f_remNeg_temp; f_rightPrim@exprs <- f_rightPrim@exprs[indices,]
-    x_rightPrim <- max(flowDensity::.getPeaks(density(f_rightPrim@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks)
-    y_rightPrim <- max(flowDensity::.getPeaks(density(f_rightPrim@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks)
+    x_rightPrim <- max(flowDensity::.getPeaks(stats::density(f_rightPrim@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks)
+    y_rightPrim <- max(flowDensity::.getPeaks(stats::density(f_rightPrim@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks)
     if (y_rightPrim < (min(File[,2]) + (max(File[,2])-min(File[,2]))/6)) {
       threshold <- min(threshold, tinyP)
       break
@@ -82,16 +82,16 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
     indices <- intersect(which(f_remNeg_temp@exprs[,1] >= Cuts[r1]), which(f_remNeg_temp@exprs[,1] < Cuts[r1+1]))
     f_Cuts_temp <- f_remNeg_temp; f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices,]
     f_Cuts_temp@exprs[,c(1,2)] <- t(t(R) %*% t(f_Cuts_temp@exprs[,c(1,2)]))
-    Xx <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
-    Yy <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
+    Xx <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
+    Yy <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
     if (length(Xx) > 1 || length(Yy) > 1) {
       highP <- 1
       lowP <- 0
       repeat { # newton iteration
         newP <- (highP+lowP)/2
         if (newP < epsilon) break
-        Xx <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
-        Yy <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
+        Xx <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
+        Yy <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
         if (length(Xx) > 1 || length(Yy) > 1){
           highP <- newP
         } else if (length(Xx) < 1 || length(Yy) < 1) {
@@ -103,8 +103,8 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
     }
     Xx <- Xx[1]
     Yy <- Yy[1]
-    deviationX <- c(deviationX, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),1]))
-    deviationY <- c(deviationY, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),2]))
+    deviationX <- c(deviationX, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),1]))
+    deviationY <- c(deviationY, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),2]))
     Xc <- c(Xc, Xx)
     Yc <- c(Yc, Yy)
   }
@@ -212,8 +212,8 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
              }
       )
       if (length(indices) < 2) {
-        deviation2X <- c(deviation2X, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),1]))
-        deviation2Y <- c(deviation2Y, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),2]))
+        deviation2X <- c(deviation2X, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),1]))
+        deviation2Y <- c(deviation2Y, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),2]))
         Xc2g <- c(Xc2g, XxA)
         Yc2g <- c(Yc2g, YyA)
         next
@@ -230,7 +230,7 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
           message(paste0("Error finding X value for peak ", r1, " of ", choose(NumberOfSinglePos, 2)))
           break
         }
-        Xx <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=tinyPXx)$Peaks
+        Xx <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=tinyPXx)$Peaks
         if ( length (Xx) > 1 ) {
           lowPXx <- tinyPXx
         } else if (length (Xx) < 1) {
@@ -248,7 +248,7 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
           message(paste0("Error finding Y value for peak ", r1, " of ", choose(NumberOfSinglePos, 2)))
           break
         }
-        Yy <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=tinyPYy)$Peaks
+        Yy <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=tinyPYy)$Peaks
         if ( length (Yy) > 1 ) {
           lowPYy <- tinyPYy
         } else if (length (Yy) < 1) {
@@ -258,13 +258,13 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
         }
       }
       if (abs(Xx - XxA) > 3*scalingParam[1] || abs(Yy - YyA) > 3*scalingParam[2]) {
-        deviation2X <- c(deviation2X, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),1]))
-        deviation2Y <- c(deviation2Y, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),2]))
+        deviation2X <- c(deviation2X, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),1]))
+        deviation2Y <- c(deviation2Y, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),2]))
         Xc2g <- c(Xc2g, XxA)
         Yc2g <- c(Yc2g, YyA)
       } else {
-        deviation2X <- c(deviation2X, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),1]))
-        deviation2Y <- c(deviation2Y, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),2]))
+        deviation2X <- c(deviation2X, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),1]))
+        deviation2Y <- c(deviation2Y, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),2]))
         Xc2g <- c(Xc2g, Xx)
         Yc2g <- c(Yc2g, Yy)
       }
@@ -276,8 +276,8 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
         if (r1 >= r2) next
         Xx <- firstClusters$clusters[r1,1] + firstClusters$clusters[r2,1] - emptyDroplets[1]
         Yy <- firstClusters$clusters[r1,2] + firstClusters$clusters[r2,2] - emptyDroplets[2]
-        deviation2X <- c(deviation2X, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),1]))
-        deviation2Y <- c(deviation2Y, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),2]))
+        deviation2X <- c(deviation2X, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),1]))
+        deviation2Y <- c(deviation2Y, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),2]))
         Xc2g <- c(Xc2g, Xx)
         Yc2g <- c(Yc2g, Yy)
       }
@@ -369,8 +369,8 @@ findTertiaryClustersDensity <- function(f, f_remNegPrimSec, emptyDroplets, first
              }
       )
       if (length(indices) < 2) {
-        deviation2X <- c(deviation2X, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),1]))
-        deviation2Y <- c(deviation2Y, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),2]))
+        deviation2X <- c(deviation2X, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),1]))
+        deviation2Y <- c(deviation2Y, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),2]))
         XcTert <- c(XcTert, XxA)
         YcTert <- c(YcTert, YyA)
         next
@@ -387,7 +387,7 @@ findTertiaryClustersDensity <- function(f, f_remNegPrimSec, emptyDroplets, first
           message(paste0("Default X value for tertiary peak ", r1, " of 4"))
           break
         }
-        Xx <- flowDensity::.getPeaks(density(f_remNegPrimSec_temp@exprs[,1], width=1000), tinypeak.removal=tinyPXx)$Peaks
+        Xx <- flowDensity::.getPeaks(stats::density(f_remNegPrimSec_temp@exprs[,1], width=1000), tinypeak.removal=tinyPXx)$Peaks
         if ( length (Xx) > 1 ) {
           lowPXx <- tinyPXx
         } else if (length (Xx) < 1) {
@@ -405,7 +405,7 @@ findTertiaryClustersDensity <- function(f, f_remNegPrimSec, emptyDroplets, first
           message(paste0("Default Y value for tertiary peak ", r1, " of 4"))
           break
         }
-        Yy <- flowDensity::.getPeaks(density(f_remNegPrimSec_temp@exprs[,2], width=1000), tinypeak.removal=tinyPYy)$Peaks
+        Yy <- flowDensity::.getPeaks(stats::density(f_remNegPrimSec_temp@exprs[,2], width=1000), tinypeak.removal=tinyPYy)$Peaks
         if ( length (Yy) > 1 ) {
           lowPYy <- tinyPYy
         } else if (length (Yy) < 1) {
@@ -415,13 +415,13 @@ findTertiaryClustersDensity <- function(f, f_remNegPrimSec, emptyDroplets, first
         }
       }
       if (abs(Xx - XxA) > 4*scalingParam[1] || abs(Yy - YyA) > 4*scalingParam[2]) {
-        deviation2X <- c(deviation2X, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),1]))
-        deviation2Y <- c(deviation2Y, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),2]))
+        deviation2X <- c(deviation2X, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),1]))
+        deviation2Y <- c(deviation2Y, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= XxA+1000), which(f@exprs[,1] >= XxA-1000)), intersect(which(f@exprs[,2] <= YyA+1000), which(f@exprs[,2] >= YyA-1000))),2]))
         XcTert <- c(XcTert, XxA)
         YcTert <- c(YcTert, YyA)
       } else {
-        deviation2X <- c(deviation2X, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),1]))
-        deviation2Y <- c(deviation2Y, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),2]))
+        deviation2X <- c(deviation2X, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),1]))
+        deviation2Y <- c(deviation2Y, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),2]))
         XcTert <- c(XcTert, Xx)
         YcTert <- c(YcTert, Yy)
       }
@@ -463,8 +463,8 @@ findTertiaryClustersDensity <- function(f, f_remNegPrimSec, emptyDroplets, first
                           secondaryClusters$clusters[6,2]+firstClusters$clusters[2,2] - emptyDroplets[2])
              }
       )
-      deviation2X <- c(deviation2X, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),1]))
-      deviation2Y <- c(deviation2Y, sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),2]))
+      deviation2X <- c(deviation2X, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),1]))
+      deviation2Y <- c(deviation2Y, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),2]))
       XcTert <- c(XcTert, Xx)
       YcTert <- c(YcTert, Yy)
     }
@@ -482,7 +482,7 @@ findQuaternaryClusterDensity <- function(f, f_onlyQuad, emptyDroplets, firstClus
     lowP <- 0
     repeat{
       tinyP <- (highP+lowP)/2
-      XcQuad <- flowDensity::.getPeaks(density(f_onlyQuad@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks
+      XcQuad <- flowDensity::.getPeaks(stats::density(f_onlyQuad@exprs[,1], width=1000), tinypeak.removal=tinyP)$Peaks
       if (length(XcQuad) < 1 ) {
         highP <- tinyP
       } else if (length(XcQuad) > 1){
@@ -495,7 +495,7 @@ findQuaternaryClusterDensity <- function(f, f_onlyQuad, emptyDroplets, firstClus
     lowP <- 0
     repeat{
       tinyP <- (highP+lowP)/2
-      YcQuad <- flowDensity::.getPeaks(density(f_onlyQuad@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks
+      YcQuad <- flowDensity::.getPeaks(stats::density(f_onlyQuad@exprs[,2], width=1000), tinypeak.removal=tinyP)$Peaks
       if (length(YcQuad) < 1 ) {
         highP <- tinyP
       } else if (length(YcQuad) > 1){
@@ -659,16 +659,16 @@ findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dim
     indices <- intersect(which(f_remNeg_temp@exprs[,1] >= Cuts[r1]), which(f_remNeg_temp@exprs[,1] < Cuts[r1+1]))
     f_Cuts_temp <- f_remNeg_temp; f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices,]
     f_Cuts_temp@exprs[,c(1,2)] <- t(t(R) %*% t(f_Cuts_temp@exprs[,c(1,2)]))
-    Xx <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
-    Yy <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
+    Xx <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
+    Yy <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
     if (length(Xx) > 1 || length(Yy) > 1) {
       highP <- 1
       lowP <- 0
       repeat { # newton iteration
         newP <- (highP+lowP)/2
         if (newP < epsilon) break
-        Xx <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
-        Yy <- flowDensity::.getPeaks(density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
+        Xx <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
+        Yy <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
         if (length(Xx) > 1 || length(Yy) > 1){
           highP <- newP
         } else if (length(Xx) < 1 || length(Yy) < 1) {
@@ -867,9 +867,9 @@ findSecondaryClusters <- function(firstClusters, clusterMeans, emptyDroplets, re
   
   if (max(secondClusters) == 0) return(list(clusters=secondClusters, correctionFactor=correctionFactor))
   
-  q <- quantile(counts[secondClusters])
+  q <- stats::quantile(counts[secondClusters])
   
-  if ((IQR(counts[secondClusters]) > q[3]) && (q[3] > 5) && (q[1] < 5)) {
+  if ((stats::IQR(counts[secondClusters]) > q[3]) && (q[3] > 5) && (q[1] < 5)) {
     remove <- c(remove, as.integer(names(which.min(counts[secondClusters]))))
     print(counts[secondClusters])
     return(findSecondaryClusters(firstClusters, clusterMeans, emptyDroplets, remove, dimensions, counts))
@@ -901,7 +901,7 @@ findTertiaryClusters <- function(emptyDroplets, firstClusters, secondClusters, r
     
     for (i in 1:4) {
       if (i<3) {
-        cluster <- tail(secondClusters, n=1)
+        cluster <- utils::tail(secondClusters, n=1)
         if (cluster == 0 || length(clusterMeans2) == 0) {
           thirdClusters1 <- rbind(thirdClusters1, rep(dimensions, nrow(clusterMeans2)))
           next
@@ -941,7 +941,7 @@ findTertiaryClusters <- function(emptyDroplets, firstClusters, secondClusters, r
     
     for (i in 1:4) {
       if (i<3) {
-        cluster <- tail(secondClusters, n=1)
+        cluster <- utils::tail(secondClusters, n=1)
         if (cluster == 0 || length(clusterMeans2) == 0) {
           thirdClusters1 <- c(thirdClusters1, 0)
           next
@@ -981,9 +981,9 @@ findTertiaryClusters <- function(emptyDroplets, firstClusters, secondClusters, r
   
   if(max(thirdClusters) == 0) return(list(clusters=thirdClusters))
   
-  q <- quantile(counts[thirdClusters])
+  q <- stats::quantile(counts[thirdClusters])
   
-  if ((IQR(counts[thirdClusters]) > q[3]) && (q[3] > 5) && (q[1] < 5)) {
+  if ((stats::IQR(counts[thirdClusters]) > q[3]) && (q[3] > 5) && (q[1] < 5)) {
     remove <- c(remove, as.integer(names(which.min(counts[thirdClusters]))))
     print(counts[thirdClusters])
     return(findTertiaryClusters(emptyDroplets, firstClusters, secondClusters, remove, clusterMeans, correctionFactor, dimensions, counts))
@@ -1042,8 +1042,8 @@ adjustClusterMeans <- function(data, clusterMeans, result, clusters) {
   for (i in clusters) {
     if(i == 0) next
     f@exprs <- as.matrix(data[result == i,])
-    Xc <- flowDensity::.getPeaks(density(f@exprs[,1], width=1000), tinypeak.removal=0.2)$Peaks[1]
-    Yc <- flowDensity::.getPeaks(density(f@exprs[,2], width=1000), tinypeak.removal=0.2)$Peaks[1]
+    Xc <- flowDensity::.getPeaks(stats::density(f@exprs[,1], width=1000), tinypeak.removal=0.2)$Peaks[1]
+    Yc <- flowDensity::.getPeaks(stats::density(f@exprs[,2], width=1000), tinypeak.removal=0.2)$Peaks[1]
     if(!is.null(Xc) && !is.null(Yc)) {
       clusterMeans[i,] <- c(Xc, Yc)
     }
@@ -1055,31 +1055,31 @@ adjustClusterMeans <- function(data, clusterMeans, result, clusters) {
 assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters, secondClusters, thirdClusters, fourthCluster, flowDensity) {
   remove <- vector()
   sdeviations <- list()
-  S <- var(data)
+  S <- stats::var(data)
   rownames(data) <- 1:nrow(data)
   scalingHelper <- mean(scalingParam/4)
   
   # Calculate standard deviations:
   for (c in firstClusters) {
     if (c==0) next
-    sdeviation <- 2*c(sd(data[which(result == c),1]), 
-                      sd(data[which(result == c),2]))
+    sdeviation <- 2*c(stats::sd(data[which(result == c),1]), 
+                      stats::sd(data[which(result == c),2]))
     if (anyNA(sdeviation)) sdeviation <- scalingParam/2
     if (any(sdeviation > scalingParam)) sdeviation <- scalingParam
     sdeviations[[c]] <- sdeviation
   }
   for (c in secondClusters) {
     if (c==0) next
-    sdeviation <- 2*c(sd(data[which(result == c),1]), 
-                      sd(data[which(result == c),2]))
+    sdeviation <- 2*c(stats::sd(data[which(result == c),1]), 
+                      stats::sd(data[which(result == c),2]))
     if (anyNA(sdeviation)) sdeviation <- scalingParam/2
     if (any(sdeviation > scalingParam)) sdeviation <- scalingParam
     sdeviations[[c]] <- sdeviation
   }
   for (c in thirdClusters) {
     if (c==0) next
-    sdeviation <- 2*c(sd(data[which(result == c),1]), 
-                      sd(data[which(result == c),2]))
+    sdeviation <- 2*c(stats::sd(data[which(result == c),1]), 
+                      stats::sd(data[which(result == c),2]))
     if (anyNA(sdeviation)) sdeviation <- scalingParam/2
     if (any(sdeviation > scalingParam)) sdeviation <- scalingParam
     sdeviations[[c]] <- sdeviation
@@ -1087,13 +1087,13 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
   
   ## Empties to primary clusters:
   newData <- subset(data, !result %in% c(secondClusters,thirdClusters,fourthCluster))
-  posEv <- which(mahalanobis(newData, clusterMeans[1,], S) < 0.2)
+  posEv <- which(stats::mahalanobis(newData, clusterMeans[1,], S) < 0.2)
   result[as.numeric(rownames(newData[posEv,]))] <- 1
   newData <- newData[-posEv, , drop=F]
   # Go through each cluster:
   for (c in firstClusters) {
     if (c==0) next
-    posEv <- which(mahalanobis(newData, clusterMeans[c,], S) < 0.2)
+    posEv <- which(stats::mahalanobis(newData, clusterMeans[c,], S) < 0.2)
     result[as.numeric(rownames(newData[posEv,]))] <- c
     newData <- newData[-posEv, , drop=F]
     sdC <- sdeviations[[c]]
@@ -1146,7 +1146,7 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
     }
     for (c in secondClusters) {
       if (c==0) next
-      posEv <- which(mahalanobis(newData, clusterMeans[c,], S) < 0.2)
+      posEv <- which(stats::mahalanobis(newData, clusterMeans[c,], S) < 0.2)
       result[as.numeric(rownames(newData[posEv,]))] <- c
       newData <- newData[-posEv, , drop=F]
       sdC <- sdeviations[[c]]
@@ -1235,7 +1235,7 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
     }
     for (c in thirdClusters) {
       if (c==0) next
-      posEv <- which(mahalanobis(newData, clusterMeans[c,], S) < 0.2)
+      posEv <- which(stats::mahalanobis(newData, clusterMeans[c,], S) < 0.2)
       result[as.numeric(rownames(newData[posEv,]))] <- c
       newData <- newData[-posEv, , drop=F]
       sdC <- sdeviations[[c]]
@@ -1324,9 +1324,9 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
       newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]+sdC[1]) & newData[,2] < (clusterMeans[c,2]+sdC[2])))
     }
     for (c in fourthCluster) {
-      sdC <- 2*c(sd(data[result==c,1], na.rm = T), sd(data[result==c,2], na.rm = T))
+      sdC <- 2*c(stats::sd(data[result==c,1], na.rm = T), stats::sd(data[result==c,2], na.rm = T))
       if (is.na(sum(sdC))) next
-      posEv <- which(mahalanobis(newData, clusterMeans[c,], S) < 0.2)
+      posEv <- which(stats::mahalanobis(newData, clusterMeans[c,], S) < 0.2)
       result[as.numeric(rownames(newData[posEv,]))] <- c
       newData <- newData[-posEv, , drop=F]
       newData <- subset(newData, !(newData[,1] < clusterMeans[c,1]+sdC[1] & newData[,1] > clusterMeans[c,1]-sdC[1]
