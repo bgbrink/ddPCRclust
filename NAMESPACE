@@ -2,11 +2,11 @@
 
 export(calculateCPDs)
 export(createEnsemble)
+export(ddPCRclust)
 export(exportPlots)
 export(exportToCSV)
 export(exportToExcel)
 export(runDensity)
-export(runDropClust)
 export(runPeaks)
 export(runSam)
 import(R.utils)

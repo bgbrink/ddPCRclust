@@ -1,9 +1,11 @@
-## Part of the dropClust algorithm
+## Part of the ddPCRclust algorithm
 ## Author: Benedikt G Brink, Bielefeld University
-## August 2017
+## November 2017
 
 # Find the primary clusters based on their density peaks found by flowDensity.
-findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
+findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers, scalingParam, epsilon) {
+  threshold <- 5*epsilon
+  CutAbovePrimary <- mean(scalingParam)*2
   
   # Calculate the threshold to remove events that are too positive. This makes it easier to find single positives.
   f_findExtremes_temp <- f
@@ -41,18 +43,18 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
     }
   }
   
-  mSlope <<- (y_leftPrim - y_rightPrim)/(x_leftPrim - x_rightPrim)
-  theta <<- abs(atan(mSlope))
-  R <<- matrix( c(cos(theta), sin(theta), -sin(theta), cos(theta)) ,2 ,2)
+  mSlope <- (y_leftPrim - y_rightPrim)/(x_leftPrim - x_rightPrim)
+  theta <- abs(atan(mSlope))
+  rotate <- matrix( c(cos(theta), sin(theta), -sin(theta), cos(theta)) ,2 ,2)
   
-  Rot_xy_leftPrim <<- R %*% c(x_leftPrim, y_leftPrim) # coordinates of rotated left  primary cluster
-  Rot_xy_rightPrim <<- R %*% c(x_rightPrim, y_rightPrim) # coordinates of rotated right primary cluster
+  Rot_xy_leftPrim <- rotate %*% c(x_leftPrim, y_leftPrim) # coordinates of rotated left  primary cluster
+  Rot_xy_rightPrim <- rotate %*% c(x_rightPrim, y_rightPrim) # coordinates of rotated right primary cluster
   
-  f_findExtremes_temp@exprs[,c(1,2)] <- t(R %*% t(f_findExtremes_temp@exprs[,c(1,2)]))
-  f_remNeg_temp@exprs    [,c(1,2)] <- t(R %*% t(f_remNeg_temp@exprs    [,c(1,2)]))
-  upSlantmax <<- deGate(f_findExtremes_temp, c(2), percentile=0.999, use.percentile=T)
-  upSlantmin <<- deGate(f_findExtremes_temp, c(2), percentile=0.001, use.percentile=T)
-  ScaleChop <<-  (upSlantmax - upSlantmin) / max(File)
+  f_findExtremes_temp@exprs[,c(1,2)] <- t(rotate %*% t(f_findExtremes_temp@exprs[,c(1,2)]))
+  f_remNeg_temp@exprs    [,c(1,2)] <- t(rotate %*% t(f_remNeg_temp@exprs    [,c(1,2)]))
+  upSlantmax <- deGate(f_findExtremes_temp, c(2), percentile=0.999, use.percentile=T)
+  upSlantmin <- deGate(f_findExtremes_temp, c(2), percentile=0.001, use.percentile=T)
+  ScaleChop <-  (upSlantmax - upSlantmin) / max(File)
   # Chop off the very positive events
   indices <- which(f_remNeg_temp@exprs[,2] <= (max(Rot_xy_leftPrim[2], Rot_xy_rightPrim[2]) + CutAbovePrimary*ScaleChop))
   f_remNeg_temp@exprs <- f_remNeg_temp@exprs[indices,]
@@ -81,7 +83,7 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
   for ( r1 in 1:(length(Cuts)-1) ) {
     indices <- intersect(which(f_remNeg_temp@exprs[,1] >= Cuts[r1]), which(f_remNeg_temp@exprs[,1] < Cuts[r1+1]))
     f_Cuts_temp <- f_remNeg_temp; f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices,]
-    f_Cuts_temp@exprs[,c(1,2)] <- t(t(R) %*% t(f_Cuts_temp@exprs[,c(1,2)]))
+    f_Cuts_temp@exprs[,c(1,2)] <- t(t(rotate) %*% t(f_Cuts_temp@exprs[,c(1,2)]))
     Xx <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
     Yy <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
     if (length(Xx) > 1 || length(Yy) > 1) {
@@ -109,8 +111,8 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
     Yc <- c(Yc, Yy)
   }
   if (length(Xc) == 4 && length(Yc) == 4) {
-    Rot_xy_midLeftPrim <- R %*% c(Xc[2], Yc[2]) # coordinates of rotated middle left  primary cluster
-    Rot_xy_midRightPrim <- R %*% c(Xc[3], Yc[3]) # coordinates of rotated middle right primary cluster
+    Rot_xy_midLeftPrim <- rotate %*% c(Xc[2], Yc[2]) # coordinates of rotated middle left  primary cluster
+    Rot_xy_midRightPrim <- rotate %*% c(Xc[3], Yc[3]) # coordinates of rotated middle right primary cluster
     
     test_left <- abs(det(rbind(cbind(1,1,1), cbind(Rot_xy_leftPrim, Rot_xy_midLeftPrim, rbind(0,0)))))/100
     test_right <- abs(det(rbind(cbind(1,1,1), cbind(Rot_xy_rightPrim, Rot_xy_midRightPrim, rbind(0,0)))))/100
@@ -132,13 +134,33 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers) {
 }
 
 # Find the secondary clusters based on their density peaks found by flowDensity.
-findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstClusters) {
+findSecondaryClustersDensity <- function(f, file, f_remNegPrim, emptyDroplets, firstClusters, scalingParam, epsilon) {
+  CutAbovePrimary <- mean(scalingParam)*2
   f_remNegPrim_chopTertQuat <- f_remNegPrim
   NumberOfSinglePos <- nrow(firstClusters$clusters)
-  f_remNegPrim_chopTertQuat@exprs    [,c(1,2)] <- t(R %*% t(f_remNegPrim_chopTertQuat@exprs    [,c(1,2)]))
+  f_findExtremes_temp <- f
+  
+  x_leftPrim <- firstClusters$clusters[1,1]
+  y_leftPrim <- firstClusters$clusters[1,2]
+  x_rightPrim <- firstClusters$clusters[NumberOfSinglePos,1]
+  y_rightPrim <- firstClusters$clusters[NumberOfSinglePos,2]
+  
+  mSlope <- (y_leftPrim - y_rightPrim)/(x_leftPrim - x_rightPrim)
+  theta <- abs(atan(mSlope))
+  rotate <- matrix( c(cos(theta), sin(theta), -sin(theta), cos(theta)) ,2 ,2)
+  
+  Rot_xy_leftPrim <- rotate %*% c(x_leftPrim, y_leftPrim) # coordinates of rotated left  primary cluster
+  Rot_xy_rightPrim <- rotate %*% c(x_rightPrim, y_rightPrim) # coordinates of rotated right primary cluster
+  
+  f_findExtremes_temp@exprs[,c(1,2)] <- t(rotate %*% t(f_findExtremes_temp@exprs[,c(1,2)]))
+  upSlantmax <- deGate(f_findExtremes_temp, c(2), percentile=0.999, use.percentile=T)
+  upSlantmin <- deGate(f_findExtremes_temp, c(2), percentile=0.001, use.percentile=T)
+  ScaleChop <-  (upSlantmax - upSlantmin) / max(file)
+  
+  f_remNegPrim_chopTertQuat@exprs    [,c(1,2)] <- t(rotate %*% t(f_remNegPrim_chopTertQuat@exprs    [,c(1,2)]))
   indices <- which(f_remNegPrim_chopTertQuat@exprs[,2] <= (upSlantmin + 2*((max(Rot_xy_leftPrim[2], Rot_xy_rightPrim[2]) + CutAbovePrimary*ScaleChop)-upSlantmin)) )
   f_remNegPrim_chopTertQuat@exprs <- f_remNegPrim_chopTertQuat@exprs[indices,]
-  f_remNegPrim_chopTertQuat@exprs[,c(1,2)] <- t(t(R) %*% t(f_remNegPrim_chopTertQuat@exprs[,c(1,2)]))
+  f_remNegPrim_chopTertQuat@exprs[,c(1,2)] <- t(t(rotate) %*% t(f_remNegPrim_chopTertQuat@exprs[,c(1,2)]))
   
   deviation2X <- deviation2Y <- vector()
   Xc2g <- Yc2g <- NULL
@@ -157,8 +179,7 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
         theta <- 0
         repeat{ # theta from 0 to pi/2
           f_rotate_tinyP_temp <- f_remNegPrim_chopTertQuat
-          R <- matrix( c(cos(theta), sin(theta), -sin(theta), cos(theta)) ,2 ,2)
-          f_rotate_tinyP_temp@exprs[,c(1,2)] <- t(R %*% t(f_rotate_tinyP_temp@exprs[,c(1,2)]))
+          f_rotate_tinyP_temp@exprs[,c(1,2)] <- t(rotate %*% t(f_rotate_tinyP_temp@exprs[,c(1,2)]))
           Cuts <- deGate(f_rotate_tinyP_temp, 1, all.cuts=T, tinypeak.removal=tinyP, adjust.dens=adjustDens)
           if (length(Cuts) == (choose(NumberOfSinglePos, 2) - 1) ) break;
           if (theta >= pi/2) break;
@@ -179,7 +200,8 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
       }
       adjustDens <- adjustDens + 0.05
     }
-    
+    if ( length(Cuts) == (choose(NumberOfSinglePos, 2) - 1) ) {
+      
     # find coordiates of secondary populations
     Cuts <- c(min(f_rotate_tinyP_temp@exprs[,1]), Cuts, max(f_rotate_tinyP_temp@exprs[,1]))
     
@@ -219,7 +241,7 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
         next
       }
       f_Cuts_temp <- f_rotate_tinyP_temp; f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices,]
-      f_Cuts_temp@exprs[,c(1,2)] <- t(t(R) %*% t(f_Cuts_temp@exprs[,c(1,2)]))
+      f_Cuts_temp@exprs[,c(1,2)] <- t(t(rotate) %*% t(f_Cuts_temp@exprs[,c(1,2)]))
       
       highPXx <- 1
       lowPXx <- 0
@@ -269,6 +291,20 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
         Yc2g <- c(Yc2g, Yy)
       }
     }
+    } else {
+      # vector additon
+      for (r1 in 1:NumberOfSinglePos) {
+        for (r2 in 1:NumberOfSinglePos) {
+          if (r1 >= r2) next
+          Xx <- firstClusters$clusters[r1,1] + firstClusters$clusters[r2,1] - emptyDroplets[1]
+          Yy <- firstClusters$clusters[r1,2] + firstClusters$clusters[r2,2] - emptyDroplets[2]
+          deviation2X <- c(deviation2X, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),1]))
+          deviation2Y <- c(deviation2Y, stats::sd(f@exprs[intersect(intersect(which(f@exprs[,1] <= Xx+1000), which(f@exprs[,1] >= Xx-1000)), intersect(which(f@exprs[,2] <= Yy+1000), which(f@exprs[,2] >= Yy-1000))),2]))
+          Xc2g <- c(Xc2g, Xx)
+          Yc2g <- c(Yc2g, Yy)
+        }
+      }
+    }
   } else {
     # vector additon
     for (r1 in 1:NumberOfSinglePos) {
@@ -304,11 +340,19 @@ findSecondaryClustersDensity <- function(f, f_remNegPrim, emptyDroplets, firstCl
 }
 
 # Find the tertiary clusters based on their density peaks found by flowDensity.
-findTertiaryClustersDensity <- function(f, f_remNegPrimSec, emptyDroplets, firstClusters, secondaryClusters) {
-  
+findTertiaryClustersDensity <- function(f, f_remNegPrimSec, emptyDroplets, firstClusters, secondaryClusters, scalingParam, epsilon) {
   NumberOfSinglePos <- nrow(firstClusters$clusters)
   XcTert <- YcTert <- NULL
   deviation2X <- deviation2Y <- vector()
+  
+  x_leftPrim <- firstClusters$clusters[1,1]
+  y_leftPrim <- firstClusters$clusters[1,2]
+  x_rightPrim <- firstClusters$clusters[NumberOfSinglePos,1]
+  y_rightPrim <- firstClusters$clusters[NumberOfSinglePos,2]
+  
+  mSlope <- (y_leftPrim - y_rightPrim)/(x_leftPrim - x_rightPrim)
+  theta <- abs(atan(mSlope))
+  rotate <- matrix( c(cos(theta), sin(theta), -sin(theta), cos(theta)) ,2 ,2)
   
   if ( nrow(f_remNegPrimSec) >= NumberOfSinglePos^2*3 ) { # If less than 50 points for trip and quad pops together, then use vector addition
     
@@ -376,7 +420,7 @@ findTertiaryClustersDensity <- function(f, f_remNegPrimSec, emptyDroplets, first
         next
       }
       f_remNegPrimSec_temp <- f_remNegPrimSec; f_remNegPrimSec_temp@exprs <- f_remNegPrimSec_temp@exprs[indices,]
-      f_remNegPrimSec_temp@exprs[,c(1,2)] <- t(t(R) %*% t(f_remNegPrimSec_temp@exprs[,c(1,2)]))
+      f_remNegPrimSec_temp@exprs[,c(1,2)] <- t(t(rotate) %*% t(f_remNegPrimSec_temp@exprs[,c(1,2)]))
       
       highPXx <- 1
       lowPXx <- 0
@@ -530,8 +574,9 @@ findQuaternaryClusterDensity <- function(f, f_onlyQuad, emptyDroplets, firstClus
 } 
 
 # Find the primary clusters based on their density peaks found by flowDensity.
-findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dimensions, File, f, NumberOfSinglePos=4) {
+findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dimensions, File, f, NumberOfSinglePos=4, scalingParam, epsilon) {
   
+  CutAbovePrimary <- mean(scalingParam)*2
   NumOfClusters <- NumberOfSinglePos^2
   DataRemoved <- FinalResults <- NULL
   
@@ -594,7 +639,6 @@ findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dim
     if (i == minimum || i == emptyDroplets)
       next
     test <- matrix(clusterMeans[c(emptyDroplets,minimum,i),], ncol=2)
-    #   print(abs(det(cbind(a, test/100))))
     if (abs(det(cbind(a, test/100))) < (dimensions[2]/(NumberOfSinglePos*20)) && clusterMeans[i,1] < (1-NumberOfSinglePos^2/100)*dimensions[1])
       collinear2 <- c(collinear2, i)
   }
@@ -606,13 +650,13 @@ findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dim
   if (dataTable[realFirstCluster2] < dataTable[realFirstCluster1]/10) {
     cat(paste("Something wrong with primary cluster detection (Ch2: only", dataTable[realFirstCluster2], "droplets). Trying again..."))
     remove <- c(remove, collinear2)
-    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, 1.1*dimensions, File, f, NumberOfSinglePos))
+    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, 1.1*dimensions, File, f, NumberOfSinglePos, scalingParam, epsilon))
   }
 
   if (dataTable[realFirstCluster1] < dataTable[realFirstCluster2]/10) {
     cat(paste("Something wrong with primary cluster detection (Ch1: only", dataTable[realFirstCluster1], "droplets). Trying again..."))
     remove <- c(remove, collinear1)
-    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, 1.1*dimensions, File, f, NumberOfSinglePos))
+    return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, 1.1*dimensions, File, f, NumberOfSinglePos, scalingParam, epsilon))
   }
   
   x_leftPrim <- clusterMeans[realFirstCluster1,1]
@@ -622,13 +666,13 @@ findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dim
   
   mSlope <- (y_leftPrim - y_rightPrim)/(x_leftPrim - x_rightPrim)
   theta <- abs(atan(mSlope))
-  R <- matrix( c(cos(theta), sin(theta), -sin(theta), cos(theta)) ,2 ,2)
+  rotate <- matrix( c(cos(theta), sin(theta), -sin(theta), cos(theta)) ,2 ,2)
   
-  Rot_xy_leftPrim <- R %*% c(x_leftPrim, y_leftPrim) # coordinates of rotated left  primary cluster
-  Rot_xy_rightPrim <- R %*% c(x_rightPrim, y_rightPrim) # coordinates of rotated right primary cluster
+  Rot_xy_leftPrim <- rotate %*% c(x_leftPrim, y_leftPrim) # coordinates of rotated left  primary cluster
+  Rot_xy_rightPrim <- rotate %*% c(x_rightPrim, y_rightPrim) # coordinates of rotated right primary cluster
   
-  f_findExtremes_temp@exprs[,c(1,2)] <- t(R %*% t(f_findExtremes_temp@exprs[,c(1,2)]))
-  f_remNeg_temp@exprs    [,c(1,2)] <- t(R %*% t(f_remNeg_temp@exprs    [,c(1,2)]))
+  f_findExtremes_temp@exprs[,c(1,2)] <- t(rotate %*% t(f_findExtremes_temp@exprs[,c(1,2)]))
+  f_remNeg_temp@exprs    [,c(1,2)] <- t(rotate %*% t(f_remNeg_temp@exprs    [,c(1,2)]))
   upSlantmax <- deGate(f_findExtremes_temp, c(2), percentile=0.999, use.percentile=T)
   upSlantmin <- deGate(f_findExtremes_temp, c(2), percentile=0.001, use.percentile=T)
   # Chop off the very positive events
@@ -658,7 +702,7 @@ findPrimaryClusters <- function(data, clusterMeans, emptyDroplets, remove=0, dim
   for ( r1 in 1:(length(Cuts)-1) ) {
     indices <- intersect(which(f_remNeg_temp@exprs[,1] >= Cuts[r1]), which(f_remNeg_temp@exprs[,1] < Cuts[r1+1]))
     f_Cuts_temp <- f_remNeg_temp; f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices,]
-    f_Cuts_temp@exprs[,c(1,2)] <- t(t(R) %*% t(f_Cuts_temp@exprs[,c(1,2)]))
+    f_Cuts_temp@exprs[,c(1,2)] <- t(t(rotate) %*% t(f_Cuts_temp@exprs[,c(1,2)]))
     Xx <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,1], width=1000), tinypeak.removal=newP)$Peaks
     Yy <- flowDensity::.getPeaks(stats::density(f_Cuts_temp@exprs[,2], width=1000), tinypeak.removal=newP)$Peaks
     if (length(Xx) > 1 || length(Yy) > 1) {
@@ -725,7 +769,6 @@ findPrimaryClusters_old <- function(data, clusterMeans, emptyDroplets, remove=0,
     if (i == minimum || i == emptyDroplets)
       next
     test <- matrix(clusterMeans[c(emptyDroplets,minimum,i),], ncol=2)
-    #   print(abs(det(cbind(a, test/100))))
     if (abs(det(cbind(a, test/100))) < (dimensions[2]/100))
       collinear2 <- c(collinear2, i)
   }
@@ -871,17 +914,14 @@ findSecondaryClusters <- function(firstClusters, clusterMeans, emptyDroplets, re
   
   if ((stats::IQR(counts[secondClusters]) > q[3]) && (q[3] > 5) && (q[1] < 5)) {
     remove <- c(remove, as.integer(names(which.min(counts[secondClusters]))))
-    print(counts[secondClusters])
     return(findSecondaryClusters(firstClusters, clusterMeans, emptyDroplets, remove, dimensions, counts))
   }
   if (min(counts[secondClusters]) < q[2]/5) {
     remove <- c(remove, as.integer(names(which.min(counts[secondClusters]))))
-    print(counts[secondClusters])
     return(findSecondaryClusters(firstClusters, clusterMeans, emptyDroplets, remove, dimensions, counts))
   }
   if (max(counts[secondClusters]) > q[4]*5) {
     remove <- c(remove, as.integer(names(which.max(counts[secondClusters]))))
-    print(counts[secondClusters])
     return(findSecondaryClusters(firstClusters, clusterMeans, emptyDroplets, remove, dimensions, counts))
   }
   
@@ -985,17 +1025,14 @@ findTertiaryClusters <- function(emptyDroplets, firstClusters, secondClusters, r
   
   if ((stats::IQR(counts[thirdClusters]) > q[3]) && (q[3] > 5) && (q[1] < 5)) {
     remove <- c(remove, as.integer(names(which.min(counts[thirdClusters]))))
-    print(counts[thirdClusters])
     return(findTertiaryClusters(emptyDroplets, firstClusters, secondClusters, remove, clusterMeans, correctionFactor, dimensions, counts))
   }
   if (min(counts[thirdClusters]) < q[2]/5) {
     remove <- c(remove, as.integer(names(which.min(counts[thirdClusters]))))
-    print(counts[thirdClusters])
     return(findTertiaryClusters(emptyDroplets, firstClusters, secondClusters, remove, clusterMeans, correctionFactor, dimensions, counts))
   }
   if (max(counts[thirdClusters]) > q[4]*5) {
     remove <- c(remove, as.integer(names(which.max(counts[thirdClusters]))))
-    print(counts[thirdClusters])
     return(findTertiaryClusters(emptyDroplets, firstClusters, secondClusters, remove, clusterMeans, correctionFactor, dimensions, counts))
   }
   
@@ -1026,7 +1063,6 @@ mergeClusters <- function(result, clusterMeans, finalResult, remove, p = 12) {
         #threshold <- clusterMeans[j,]/as.integer(sqrt(length(finalResult))*1.5)
         threshold <- sqrt(clusterMeans[j,])*p
         if (abs(clusterMeans2[i,1] - clusterMeans[j,1]) < threshold[1] && abs(clusterMeans2[i,2] - clusterMeans[j,2]) < threshold[2]) {
-          #print(paste("merging", ColoursUsed[match(clusterMeans2[i], clusterMeans)], ColoursUsed[j]))
           result[result == match(clusterMeans2[i], clusterMeans)] = j
         }
       }
@@ -1052,7 +1088,7 @@ adjustClusterMeans <- function(data, clusterMeans, result, clusters) {
 }
 
 # Find the rain and assign it based on the distance to vector lines connecting the cluster centres.
-assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters, secondClusters, thirdClusters, fourthCluster, flowDensity) {
+assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters, secondClusters, thirdClusters, fourthCluster, flowDensity, scalingParam) {
   remove <- vector()
   sdeviations <- list()
   S <- stats::var(data)

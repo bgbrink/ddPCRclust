@@ -1,6 +1,6 @@
-## Part of the dropClust algorithm
+## Part of the ddPCRclust algorithm
 ## Author: Benedikt G Brink, Bielefeld University
-## August 2017
+## November 2017
 
 # A collection of useful functions
 

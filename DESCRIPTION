@@ -1,9 +1,9 @@
-Package: ddPCRClust
+Package: ddPCRclust
 Title: Clustering algorithm for ddPCR data
 Version: 0.99.0
 Date: 2017-07-03
 Authors@R: c(person("Benedikt G.", "Brink", email = "bbrink@cebitec.uni-bielefeld.de", role = c("aut", "cre")), person("Justin", "Meskas", email = "jmeskas@bccrc.ca", role = "ctb"), person("Ryan R.", "Brinkman", email = "rbrinkman@bccrc.ca", role = "ctb"))
-Description: The ddPCRClust algorithm can automatically quantify the events of ddPCR reaction with up to four markers. In order to determine the correct droplet count for each marker, it is crucial to both identify all clusters and label them correctly based on their position. For more information on what data can be analyzed and how a template needs to be formatted, please check the project repository on github.
+Description: The ddPCRclust algorithm can automatically quantify the events of ddPCR reaction with up to four markers. In order to determine the correct droplet count for each marker, it is crucial to both identify all clusters and label them correctly based on their position. For more information on what data can be analyzed and how a template needs to be formatted, please check the project repository on github.
 LazyData: true
 Depends:
     R (>= 3.3.3)
@@ -24,9 +24,7 @@ Remotes:
 Collate: 
     'cluster_functions.R'
     'functions.R'
-    'ddPCR.R'
-    'dropClust.R'
-    'global.R'
+    'ddPCRclust.R'
 License: file LICENSE
 URL: https://github.com/bgbrink/dropClust
 RoxygenNote: 6.0.1
