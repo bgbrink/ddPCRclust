@@ -17,15 +17,7 @@ shearCorrection(counts, lengthControl, stableControl)
 A linear regression model fitting the length vs ln(ratio) (see \link{lm} for details on linear regression).
 }
 \description{
-Longer DNA templates produce a lower droplet count due to DNA shearing. 
+Longer DNA templates produce a lower droplet count due to DNA shearing.
 This function normalizes the ddPCRclust result based on a stable marker of different lengths to negate the effect of differences in the lengths of the actual markers of interest.
-}
-\examples{
-# Run ddPCRclust
-exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
-result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
-
-# Calculate the CPDs
-markerCPDs <- calculateCPDs(result$results)
-
+(Work in progress)
 }

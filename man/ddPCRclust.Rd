@@ -6,17 +6,17 @@
 \alias{ddPCRclust-package}
 \alias{ddPCRclust-package}
 \alias{ddPCRclust}
-\title{ddPCRclust 
+\title{ddPCRclust
 A package for automated quantification of multiplexed ddPCR data}
 \usage{
 ddPCRclust(files, numOfMarkers = 4, sensitivity = 1, template = NULL,
   fast = FALSE, multithread = FALSE)
 }
 \arguments{
-\item{files}{The input file(s), specifically csv files. Each file represents a two-dimensional data frame. 
+\item{files}{The input file(s), specifically csv files. Each file represents a two-dimensional data frame.
 Each row within the data frame represents a single droplet, each column the respective intensities per colour channel.}
 
-\item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up. Can be ignored if a template is provided. 
+\item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up. Can be ignored if a template is provided.
 Else, a vector with length equal to \code{length(files)} should be provided, containing the number of markers used for the respective reaction.}
 
 \item{sensitivity}{An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
@@ -29,7 +29,7 @@ Else, a vector with length equal to \code{length(files)} should be provided, con
 }
 \value{
 \item{results}{The results of the ddPCRclust algorithm. It contains three fields: \cr
-\code{data} The original input data minus the removed events (for plotting) 
+\code{data} The original input data minus the removed events (for plotting)
 \code{confidence} The agreement between the different clustering results in percent
 If all parts of the algorithm calculated the same result, the clustering is likely to be correct, thus the confidence is high\cr
 \code{counts} The droplet count for each cluster
@@ -55,7 +55,7 @@ The main function of the package is \code{\link{ddPCRclust}}. This function runs
 Afterwards, the results can be exported in different ways, using \code{\link{exportPlots}}, \code{\link{exportToExcel}} and \code{\link{exportToCSV}}.
 Once the clustering is finished, copies per droplet (CPD) for each marker can be calculated using \code{\link{calculateCPDs}}.
 
-These functions provide access to all functionalities of the ddPCRclust package. However, expert users can directly call some internal functions of the algorithm, if they find it necessary. 
+These functions provide access to all functionalities of the ddPCRclust package. However, expert users can directly call some internal functions of the algorithm, if they find it necessary.
 Here is a list of all available supplemental functions: \cr
 \code{\link{runDensity}} \cr
 \code{\link{runSam}} \cr
@@ -72,7 +72,7 @@ result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/bgbrink/dropClust}
+  \item \url{https://github.com/bgbrink/ddPCRclust}
 }
 
 }

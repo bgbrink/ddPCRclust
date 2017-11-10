@@ -11,11 +11,14 @@ exportToExcel(data, directory, annotations, raw = FALSE)
 
 \item{directory}{The parent directory where the files should saved. A new folder with the experiment name will be created (see below).}
 
-\item{annotations}{Some basic metadata about the ddPCR reaction. If you provided \code{\link{ddPCRclust}} a template, this paramater can be filled with the corresponding field in the result. 
+\item{annotations}{Some basic metadata about the ddPCR reaction. If you provided \code{\link{ddPCRclust}} a template, this paramater can be filled with the corresponding field in the result.
 Otherwise, you have to provide a character vector containing a name and the the color channels, e.g. \code{c(Name="ddPCR_01-04-2017", Ch1="HEX", Ch2="FAM")}}
 
 \item{raw}{Boolean which determines if the annotated raw data should be exported along with the final counts. Basically, a third column will be added to the original data, which contains the cluster number to which this point was assigned to.
 Useful for example to visualize the clustering later on. (Warning: this can take a while!)}
+}
+\value{
+None
 }
 \description{
 A convinience function that takes the results of the droplClust algorithm and exports them to an Excel file.

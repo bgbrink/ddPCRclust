@@ -1,0 +1,28 @@
+\begin{thebibliography}{1}
+
+\bibitem{malek2015flowdensity}
+Mehrnoush Malek, Mohammad~Jafar Taghiyar, Lauren Chong, Greg Finak, Raphael
+  Gottardo, and Ryan~R Brinkman.
+\newblock {flowDensity: reproducing manual gating of flow cytometry data by
+  automated density-based cell population identification}.
+\newblock {\em Bioinformatics}, 31(4):606--607, 2015.
+
+\bibitem{zare2010data}
+Habil Zare, Parisa Shooshtari, Arvind Gupta, and Ryan~R Brinkman.
+\newblock {Data reduction for spectral clustering to analyze high throughput
+  flow cytometry data}.
+\newblock {\em BMC bioinformatics}, 11(1):403, 2010.
+
+\bibitem{ge2012flowpeaks}
+Yongchao Ge and Stuart~C Sealfon.
+\newblock {flowPeaks: a fast unsupervised clustering for flow cytometry data
+  via K-means and density peak finding}.
+\newblock {\em Bioinformatics}, 28(15):2052--2058, 2012.
+
+\bibitem{shiny2017}
+Winston Chang, Joe Cheng, JJ~Allaire, Yihui Xie, and Jonathan McPherson.
+\newblock {\em {shiny: Web Application Framework for R}}, 2017.
+\newblock R package version 1.0.3.
+\newblock URL: \url{https://CRAN.R-project.org/package=shiny}.
+
+\end{thebibliography}

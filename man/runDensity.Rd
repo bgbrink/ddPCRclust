@@ -33,7 +33,8 @@ densResult <- runDensity(file = file, numOfMarkers = 4)
 # Plot the results
 library(ggplot2)
 p <- ggplot(data = densResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
-p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = TRUE) + ggtitle("flowDensity example")+theme_bw() + theme(legend.position="none")
+p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = TRUE) +
+     ggtitle("flowDensity example")+theme_bw() + theme(legend.position="none")
 p
 
 }

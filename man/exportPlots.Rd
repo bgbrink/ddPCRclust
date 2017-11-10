@@ -11,12 +11,15 @@ exportPlots(data, directory, annotations, format = ".png", invert = FALSE)
 
 \item{directory}{The parent directory where the files should saved. A new folder with the experiment name will be created (see below).}
 
-\item{annotations}{Some basic metadata about the ddPCR reaction. If you provided \code{\link{ddPCRclust}} a template, this paramater can be filled with the corresponding field in the result. 
+\item{annotations}{Some basic metadata about the ddPCR reaction. If you provided \code{\link{ddPCRclust}} a template, this paramater can be filled with the corresponding field in the result.
 Otherwise, you have to provide a character vector containing a name and the the color channels, e.g. \code{c(Name="ddPCR_01-04-2017", Ch1="HEX", Ch2="FAM")}}
 
 \item{format}{Which file format to use. Can be either be a device function (e.g. png), or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only). See also \code{\link{ggsave}}}
 
 \item{invert}{Invert the axis, e.g. x = Ch2.Amplitude, y = Ch1.Amplitude}
+}
+\value{
+None
 }
 \description{
 A convinience function that takes the results of the ddPCRclust algorithm and plots them using the ggplot2 library and a custom colour palette.
