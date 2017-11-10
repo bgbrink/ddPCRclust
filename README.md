@@ -1,4 +1,4 @@
-# dropClust
+# ddPCRclust
 ## A package for automated quantification of multiplexed ddPCR data.
 
 This R package was designed to automatically quantify the events of a multiplexed ddPCR reaction.
@@ -14,7 +14,7 @@ alt="Example G1"
 width="400">
 </p>
 
-For robustness, dropClust incorporates adapted versions of three established, independent clustering algorithms: the [flowDensity](https://bioconductor.org/packages/release/bioc/html/flowDensity.html) algorithm, published in 2012 by M. Jafar Taghiyar and Mehrnoush Malek, the clustering algorithm [SamSPECTRAL](https://bioconductor.org/packages/release/bioc/html/SamSPECTRAL.html), a version of spectral clustering adapted to flow cytometry data and the [flowPeaks](https://bioconductor.org/packages/release/bioc/html/flowPeaks.html) package, developed by Yongchao Ge and Stuart C. Sealfon. The results are combined into a cluster ensemble. This enhances the precision and the agreement between the three approaches provides a measure of confidence for clustering results.
+For robustness, ddPCRclust incorporates adapted versions of three established, independent clustering algorithms: the [flowDensity](https://bioconductor.org/packages/release/bioc/html/flowDensity.html) algorithm, published in 2012 by M. Jafar Taghiyar and Mehrnoush Malek, the clustering algorithm [SamSPECTRAL](https://bioconductor.org/packages/release/bioc/html/SamSPECTRAL.html), a version of spectral clustering adapted to flow cytometry data and the [flowPeaks](https://bioconductor.org/packages/release/bioc/html/flowPeaks.html) package, developed by Yongchao Ge and Stuart C. Sealfon. The results are combined into a cluster ensemble. This enhances the precision and the agreement between the three approaches provides a measure of confidence for clustering results.
 <p align="center">
 <img 
 src="https://cloud.githubusercontent.com/assets/11661112/25387160/1e5eea02-29ca-11e7-871b-e2e3cd2639ec.png"  
@@ -72,18 +72,18 @@ G08|Cell line|3|a||c|d
 E09|FFPE|2|||c|d
 
 ### Example Files
-We provide eight examplary ddPCR files under ```dropClust/inst/extdata/```
+We provide eight examplary ddPCR files under ```ddPCRclust/inst/extdata/```
 
 Run the algorithm using the provided examples with the following command:
 ```R
-# Run dropClust
-exampleFiles <- list.files(paste0(find.package("dropClust"), "/extdata"), full.names = TRUE)
-result <- runDropClust(files = exampleFiles[1:8], template = exampleFiles[9])
+# Run ddPCRclust
+exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
+result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
 ```
-All functions are documented. You can find additional information using the help function of R: `?dropClust`
+All functions are documented. You can find additional information using the help function of R: `?ddPCRclust`
 
 ## License
-    dropClust
+    ddPCRclust
     Copyright (C) 2017  Benedikt G. Brink, Bielefeld University
                         BC Cancer Agency Branch (“BCCA”)
                         
