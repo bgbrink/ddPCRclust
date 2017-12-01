@@ -14,7 +14,7 @@ Imports:
     ggplot2,
     openxlsx,
     R.utils,
-    flowDensity,
+    flowDensity (>= 1.13.3),
     SamSPECTRAL,
     flowPeaks,
     BiocStyle
