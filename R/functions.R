@@ -1,5 +1,6 @@
 ## Part of the ddPCRclust algorithm
 ## Author: Benedikt G Brink, Bielefeld University
+## Contributor: Justin Meskas
 ## November 2017
 
 # A collection of useful functions
