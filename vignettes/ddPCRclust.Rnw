@@ -47,7 +47,7 @@ biocLite("ddPCRclust")
 @
 
 \section{Methods}
-As aforementioned, data from ddPCR consist of a number of different clusters $l_1, \dots, l_k$ and their respective centroids $c_1, \dots, c_k$, which each contain droplets ($x_1, \dots, x_m$) representing one or more genetic targets $t_1, \dots, t_n$. We define four steps to successfully analyse this data:
+As aforementioned, data from ddPCR consists of a number of different clusters $l_1, \dots, l_k$ and their respective centroids $c_1, \dots, c_k$, where $k$ is the number of clusters. All droplets ($x_1, \dots, x_m$) represent one or more genetic targets $t_1, \dots, t_n$, where $m$ is the number of droplets and $n$ is the number of targets. Each cluster $l_i$ is defined as a group of droplets that contain an identical combination of targets. We define four steps to successfully analyze this data:
 
 \begin{enumerate}
 \item Find all cluster centroids $c$.
@@ -59,7 +59,7 @@ As aforementioned, data from ddPCR consist of a number of different clusters $l_
 \section{Usage}
 The main function of the package is \Rfunction{ddPCRclust}. This function runs the algorithm with one or multiple files, automatically distributing them among all CPU cores (no paralellisation on Windows). We provide eight exemplary ddPCR files along with this package. Analyse them using the following commands.
 
-<<>>=
+<<results=hide>>=
 # Run ddPCRclust
 library(ddPCRclust)
 exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
@@ -76,7 +76,7 @@ The initial clustering to find the centroids is based on three different approac
 Originally designed for gating of flow cytometry data, \emph{flowDensity} identifies cell populations in a dataset using characteristics of the density distribution (e.g. the number, height and width of peaks and the slope of the distribution curve). Parameters can be adjusted on a population-specific basis. We use the density function to find local peaks above a threshold, which represent the centres of clusters. The method comprises the following steps:
 \begin{enumerate}
 \item Remove all $x$ where $(x_1,x_2)$ < 0.125$\,\cdot\,max(x_1,x_2)$. The bottom 12.5$\,\%$ of the data space is known to contain the negative population, i.e. the droplets without any of the targets of interest.
-\item Find the highest density peaks with $max(x_1)$ and $max(x_2)$, respectively. I define these as the two outer primary clusters $y$ and $z$, since the primary clusters empirically contain the majority of the non-negative events.
+\item Find the highest density peaks with $max(x_1)$ and $max(x_2)$, respectively. We define these as the two outer primary clusters $y$ and $z$, since the primary clusters empirically contain the majority of the non-negative events.
 \item Rotate the data with $\theta = \lvert atan(\frac{y_2 - z_2}{y_1 - z_1}) \rvert$.
 \item Cut the rotated data above the two outer clusters in a staircase manner and find all density peaks.
 \item Take the previously removed data and repeat steps 2 and 4, until all clusters are found.
@@ -84,7 +84,7 @@ Originally designed for gating of flow cytometry data, \emph{flowDensity} identi
 Clusters are then labelled based on their rotated position and lastly the rain is assigned.
 
 We provide eight exemplary ddPCR files along with this package. Analyse one of them using the following commands.
-<<>>=
+<<results=hide>>=
 # Run the flowDensity based approach
 library(ddPCRclust)
 exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
@@ -104,7 +104,7 @@ Since spectral clustering is computationally expensive ($\mathcal{O}(n^3)$ time 
 Clusters are then labelled based on their position and lastly the rain is assigned.
 
 We provide eight exemplary ddPCR files along with this package. Analyse one of them using the following commands.
-<<>>=
+<<results=hide>>=
 # Run the SamSPECTRAL based approach
 library(ddPCRclust)
 exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
@@ -126,7 +126,7 @@ All local peaks are exhaustively found by exploring the density function and the
 Clusters are then labelled based on their position and lastly the rain is assigned.
 
 We provide eight exemplary ddPCR files along with this package. Analyse one of them using the following commands.
-<<>>=
+<<results=hide>>=
 # Run the flowPeaks based approach
 library(ddPCRclust)
 exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
