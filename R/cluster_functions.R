@@ -1845,7 +1845,8 @@ assignRain <-
            thirdClusters,
            fourthCluster,
            flowDensity,
-           scalingParam) {
+           scalingParam,
+           simililarityParam = 0.95) {
     remove <- vector()
     sdeviations <- list()
     S <- stats::var(data)
@@ -1939,7 +1940,7 @@ assignRain <-
         } else {
           if (ncol(m) > 1) {
             minAnd2ndMin <- sort(m[r, ], index.return = TRUE)
-            if (minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= 0.95
+            if (minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= simililarityParam
                 ||
                 (minAnd2ndMin$x[1] <= scalingHelper &&
                  minAnd2ndMin$x[2] <= scalingHelper)) {
@@ -2091,7 +2092,7 @@ assignRain <-
           } else {
             if (ncol(m) > 1) {
               minAnd2ndMin <- sort(m[r, ], index.return = TRUE)
-              if ((minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= 0.95 &&
+              if ((minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= simililarityParam &&
                    helper2[minAnd2ndMin$ix[1]] != helper2[minAnd2ndMin$ix[2]])
                   ||
                   ((
@@ -2239,7 +2240,7 @@ assignRain <-
           } else {
             if (ncol(m) > 1) {
               minAnd2ndMin <- sort(m[r, ], index.return = TRUE)
-              if ((minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= 0.95 &&
+              if ((minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= simililarityParam &&
                    helper4[minAnd2ndMin$ix[1]] != helper4[minAnd2ndMin$ix[2]])
                   ||
                   ((
@@ -2360,7 +2361,7 @@ assignRain <-
           } else {
             if (ncol(m) > 1) {
               minAnd2ndMin <- sort(m[r, ], index.return = TRUE)
-              if (minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= 0.95
+              if (minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= simililarityParam
                   ||
                   (minAnd2ndMin$x[1] <= scalingHelper &&
                    minAnd2ndMin$x[2] <= scalingHelper)) {

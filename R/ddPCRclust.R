@@ -635,6 +635,8 @@ ensemble_wrapper <-
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
+#' @param simililarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95% similarity. 
+#   A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted. 
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -659,7 +661,8 @@ runDensity <-
   function(file,
            sensitivity = 1,
            numOfMarkers,
-           missingClusters = NULL) {
+           missingClusters = NULL,
+           simililarityParam = 0.95) {
     # ****** Parameters *******
     scalingParam <- c(max(file[, 1]) / 25, max(file[, 2]) / 25)
     epsilon <- 0.02 / sensitivity ^ 3
@@ -973,7 +976,8 @@ runDensity <-
         thirdClusters = posOfThirds,
         fourthCluster = posOfFourth,
         flowDensity = TRUE,
-        scalingParam = scalingParam
+        scalingParam = scalingParam,
+        simililarityParam = simililarityParam
       )
 
     fDensResult$result[fDensResult$result == 0] <- 0 / 0
@@ -1025,6 +1029,8 @@ runDensity <-
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
+#' @param simililarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95% similarity. 
+#   A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted. 
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -1049,7 +1055,8 @@ runSam <-
   function(file,
            sensitivity = 1,
            numOfMarkers,
-           missingClusters = NULL) {
+           missingClusters = NULL,
+           simililarityParam = 0.95) {
     # ****** Parameters *******
     scalingParam <- c(max(file[, 1]) / 25, max(file[, 2]) / 25)
     epsilon <- 0.02 / sensitivity ^ 3
@@ -1247,7 +1254,8 @@ runSam <-
         tertiaryClusters$clusters,
         quaternaryCluster,
         FALSE,
-        scalingParam
+        scalingParam,
+        simililarityParam
       )
     samRes <- rain$result
     firstClusters <- clusterMeans[firstClusters, ]
@@ -1290,6 +1298,8 @@ runSam <-
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
+#' @param simililarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95% similarity. 
+#   A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted. 
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -1314,7 +1324,8 @@ runPeaks <-
   function(file,
            sensitivity = 1,
            numOfMarkers,
-           missingClusters = NULL) {
+           missingClusters = NULL,
+           simililarityParam = 0.95) {
     # ****** Parameters *******
     scalingParam <- c(max(file[, 1]) / 25, max(file[, 2]) / 25)
     epsilon <- 0.02 / sensitivity ^ 3
@@ -1499,7 +1510,8 @@ runPeaks <-
         tertiaryClusters$clusters,
         quaternaryCluster,
         FALSE,
-        scalingParam
+        scalingParam,
+        simililarityParam
       )
     fPeaksRes$peaks.cluster <- rain$result
     firstClusters <- clusterMeans[firstClusters, ]
