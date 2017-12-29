@@ -57,13 +57,20 @@ As aforementioned, data from ddPCR consists of a number of different clusters $l
 \end{enumerate}
 
 \section{Usage}
-The main function of the package is \Rfunction{ddPCRclust}. This function runs the algorithm with one or multiple files, automatically distributing them among all CPU cores (no paralellisation on Windows). We provide eight exemplary ddPCR files along with this package. Analyse them using the following commands.
+The main function of the package is \Rfunction{ddPCRclust}. This function runs the algorithm with one or multiple files, automatically distributing them among all CPU cores (no parallelisation on Windows). We provide eight exemplary ddPCR files along with this package. Analyse them using the following commands.
 
 <<results=hide>>=
 # Run ddPCRclust
 library(ddPCRclust)
 exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
-result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
+result <- ddPCRclust(files = exampleFiles[3], template = exampleFiles[9])
+
+# Plot the results
+library(ggplot2)
+p <- ggplot(data = result$results$B01$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = TRUE) +
+    ggtitle("ddPCRclust example")+theme_bw() + theme(legend.position="none")
+p
 @
 
 \subsection{Input data:}

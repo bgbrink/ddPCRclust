@@ -13,12 +13,12 @@ findPrimaryClustersDensity <-
            epsilon) {
     threshold <- 5 * epsilon
     CutAbovePrimary <- mean(scalingParam) * 2
-
+    
     # Calculate the threshold to remove events that are too positive. This makes it easier to find single positives.
     f_findExtremes_temp <- f
     f_remNeg_temp <- f_remNeg
-
-
+    
+    
     # find left and right primary
     tinyP <- 0.6
     repeat {
@@ -36,7 +36,7 @@ findPrimaryClustersDensity <-
       indices <- which(f_remNeg_temp@exprs[, 1] <= leftPrim)
       f_leftPrim <-
         f_remNeg_temp
-      f_leftPrim@exprs <- f_leftPrim@exprs[indices, ]
+      f_leftPrim@exprs <- f_leftPrim@exprs[indices,]
       x_leftPrim <-
         max(flowDensity::getPeaks(
           stats::density(f_leftPrim@exprs[, 1], width = 1000),
@@ -53,7 +53,7 @@ findPrimaryClustersDensity <-
         break
       }
     }
-
+    
     tinyP <- 0.6
     repeat {
       tinyP <- tinyP / 2
@@ -70,7 +70,7 @@ findPrimaryClustersDensity <-
       indices <- which(f_remNeg_temp@exprs[, 2] <= rightPrim)
       f_rightPrim <-
         f_remNeg_temp
-      f_rightPrim@exprs <- f_rightPrim@exprs[indices, ]
+      f_rightPrim@exprs <- f_rightPrim@exprs[indices,]
       x_rightPrim <-
         max(flowDensity::getPeaks(
           stats::density(f_rightPrim@exprs[, 1], width = 1000),
@@ -87,17 +87,18 @@ findPrimaryClustersDensity <-
         break
       }
     }
-
-    mSlope <- (y_leftPrim - y_rightPrim) / (x_leftPrim - x_rightPrim)
+    
+    mSlope <-
+      (y_leftPrim - y_rightPrim) / (x_leftPrim - x_rightPrim)
     theta <- abs(atan(mSlope))
     rotate <-
-      matrix(c(cos(theta), sin(theta),-sin(theta), cos(theta)) , 2 , 2)
-
+      matrix(c(cos(theta), sin(theta), -sin(theta), cos(theta)) , 2 , 2)
+    
     Rot_xy_leftPrim <-
       rotate %*% c(x_leftPrim, y_leftPrim) # coordinates of rotated left  primary cluster
     Rot_xy_rightPrim <-
       rotate %*% c(x_rightPrim, y_rightPrim) # coordinates of rotated right primary cluster
-
+    
     f_findExtremes_temp@exprs[, c(1, 2)] <-
       t(rotate %*% t(f_findExtremes_temp@exprs[, c(1, 2)]))
     f_remNeg_temp@exprs    [, c(1, 2)] <-
@@ -118,8 +119,8 @@ findPrimaryClustersDensity <-
       which(f_remNeg_temp@exprs[, 2] <= (
         max(Rot_xy_leftPrim[2], Rot_xy_rightPrim[2]) + CutAbovePrimary * ScaleChop
       ))
-    f_remNeg_temp@exprs <- f_remNeg_temp@exprs[indices, ]
-
+    f_remNeg_temp@exprs <- f_remNeg_temp@exprs[indices,]
+    
     # find thresholds to divide the primary clusters
     highP <- 1
     lowP <- 0
@@ -149,7 +150,7 @@ findPrimaryClustersDensity <-
       c(min(f_remNeg_temp@exprs[, 1]), Cuts, max(f_remNeg_temp@exprs[, 1]))
     deviationX <- vector()
     deviationY <- vector()
-
+    
     # find the coordinates of the primary clusters
     for (r1 in 1:(length(Cuts) - 1)) {
       indices <-
@@ -157,15 +158,15 @@ findPrimaryClustersDensity <-
                   which(f_remNeg_temp@exprs[, 1] < Cuts[r1 + 1]))
       f_Cuts_temp <-
         f_remNeg_temp
-      f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices, ]
+      f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices,]
       f_Cuts_temp@exprs[, c(1, 2)] <-
         t(t(rotate) %*% t(f_Cuts_temp@exprs[, c(1, 2)]))
       Xx <-
         flowDensity::getPeaks(stats::density(f_Cuts_temp@exprs[, 1], width = 1000),
-                               tinypeak.removal = newP)$Peaks
+                              tinypeak.removal = newP)$Peaks
       Yy <-
         flowDensity::getPeaks(stats::density(f_Cuts_temp@exprs[, 2], width = 1000),
-                               tinypeak.removal = newP)$Peaks
+                              tinypeak.removal = newP)$Peaks
       if (length(Xx) > 1 || length(Yy) > 1) {
         highP <- 1
         lowP <- 0
@@ -176,10 +177,10 @@ findPrimaryClustersDensity <-
             break
           Xx <-
             flowDensity::getPeaks(stats::density(f_Cuts_temp@exprs[, 1], width = 1000),
-                                   tinypeak.removal = newP)$Peaks
+                                  tinypeak.removal = newP)$Peaks
           Yy <-
             flowDensity::getPeaks(stats::density(f_Cuts_temp@exprs[, 2], width = 1000),
-                                   tinypeak.removal = newP)$Peaks
+                                  tinypeak.removal = newP)$Peaks
           if (length(Xx) > 1 || length(Yy) > 1) {
             highP <- newP
           } else if (length(Xx) < 1 || length(Yy) < 1) {
@@ -207,7 +208,7 @@ findPrimaryClustersDensity <-
         rotate %*% c(Xc[2], Yc[2]) # coordinates of rotated middle left  primary cluster
       Rot_xy_midRightPrim <-
         rotate %*% c(Xc[3], Yc[3]) # coordinates of rotated middle right primary cluster
-
+      
       test_left <-
         abs(det(rbind(
           cbind(1, 1, 1),
@@ -218,7 +219,7 @@ findPrimaryClustersDensity <-
           cbind(1, 1, 1),
           cbind(Rot_xy_rightPrim, Rot_xy_midRightPrim, rbind(0, 0))
         ))) / 100
-
+      
       if (!is.na(test_left) &&
           test_left < max(File) / 2 && test_left > max(File) / 20) {
         Xc[1] <- mean(Xc[1:2])
@@ -227,7 +228,8 @@ findPrimaryClustersDensity <-
         Yc <- Yc[-2]
       }
       if (!is.na(test_right) &&
-          test_right < max(File) / 2 && test_right > max(File) / 20) {
+          test_right < max(File) / 2 &&
+          test_right > max(File) / 20) {
         Xc[3] <- mean(Xc[3:4])
         Yc[3] <- mean(Yc[3:4])
         Xc <- Xc[-4]
@@ -253,22 +255,23 @@ findSecondaryClustersDensity <-
     f_remNegPrim_chopTertQuat <- f_remNegPrim
     NumberOfSinglePos <- nrow(firstClusters$clusters)
     f_findExtremes_temp <- f
-
+    
     x_leftPrim <- firstClusters$clusters[1, 1]
     y_leftPrim <- firstClusters$clusters[1, 2]
     x_rightPrim <- firstClusters$clusters[NumberOfSinglePos, 1]
     y_rightPrim <- firstClusters$clusters[NumberOfSinglePos, 2]
-
-    mSlope <- (y_leftPrim - y_rightPrim) / (x_leftPrim - x_rightPrim)
+    
+    mSlope <-
+      (y_leftPrim - y_rightPrim) / (x_leftPrim - x_rightPrim)
     theta <- abs(atan(mSlope))
     rotate <-
-      matrix(c(cos(theta), sin(theta),-sin(theta), cos(theta)) , 2 , 2)
-
+      matrix(c(cos(theta), sin(theta), -sin(theta), cos(theta)) , 2 , 2)
+    
     Rot_xy_leftPrim <-
       rotate %*% c(x_leftPrim, y_leftPrim) # coordinates of rotated left  primary cluster
     Rot_xy_rightPrim <-
       rotate %*% c(x_rightPrim, y_rightPrim) # coordinates of rotated right primary cluster
-
+    
     f_findExtremes_temp@exprs[, c(1, 2)] <-
       t(rotate %*% t(f_findExtremes_temp@exprs[, c(1, 2)]))
     upSlantmax <-
@@ -282,7 +285,7 @@ findSecondaryClustersDensity <-
              percentile = 0.001,
              use.percentile = TRUE)
     ScaleChop <-  (upSlantmax - upSlantmin) / max(file)
-
+    
     f_remNegPrim_chopTertQuat@exprs    [, c(1, 2)] <-
       t(rotate %*% t(f_remNegPrim_chopTertQuat@exprs    [, c(1, 2)]))
     indices <-
@@ -291,16 +294,16 @@ findSecondaryClustersDensity <-
       ) - upSlantmin
       )))
     f_remNegPrim_chopTertQuat@exprs <-
-      f_remNegPrim_chopTertQuat@exprs[indices, ]
+      f_remNegPrim_chopTertQuat@exprs[indices,]
     f_remNegPrim_chopTertQuat@exprs[, c(1, 2)] <-
       t(t(rotate) %*% t(f_remNegPrim_chopTertQuat@exprs[, c(1, 2)]))
-
+    
     deviation2X <- deviation2Y <- vector()
     Xc2g <- Yc2g <- NULL
-
+    
     if (nrow(f_remNegPrim) >= NumberOfSinglePos ^ 2 * 6) {
       # If less than 96 (4-plex) points for doub, trip and quad pops together, then use vector addition
-
+      
       adjustDens <- 0.3
       repeat {
         # find thresholds to divide the secondary clusters
@@ -327,10 +330,10 @@ findSecondaryClustersDensity <-
               )
             if (length(Cuts) == (choose(NumberOfSinglePos, 2) - 1))
               break
-
+            
             if (theta >= pi / 2)
               break
-
+            
             theta <- theta + pi / 16
           }
           if (length(Cuts) < (choose(NumberOfSinglePos, 2) - 1)) {
@@ -343,11 +346,11 @@ findSecondaryClustersDensity <-
         }
         if (length(Cuts) == (choose(NumberOfSinglePos, 2) - 1))
           break
-
+        
         if (adjustDens > 0.5) {
           message("double positive detection failed.")
           break
-
+          
         }
         adjustDens <- adjustDens + 0.05
       }
@@ -357,7 +360,7 @@ findSecondaryClustersDensity <-
           c(min(f_rotate_tinyP_temp@exprs[, 1]),
             Cuts,
             max(f_rotate_tinyP_temp@exprs[, 1]))
-
+        
         for (r1 in 1:(length(Cuts) - 1)) {
           indices <-
             intersect(
@@ -426,10 +429,10 @@ findSecondaryClustersDensity <-
           }
           f_Cuts_temp <-
             f_rotate_tinyP_temp
-          f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices, ]
+          f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices,]
           f_Cuts_temp@exprs[, c(1, 2)] <-
             t(t(rotate) %*% t(f_Cuts_temp@exprs[, c(1, 2)]))
-
+          
           highPXx <- 1
           lowPXx <- 0
           repeat {
@@ -446,7 +449,7 @@ findSecondaryClustersDensity <-
             }
             Xx <-
               flowDensity::getPeaks(stats::density(f_Cuts_temp@exprs[, 1], width = 1000),
-                                     tinypeak.removal = tinyPXx)$Peaks
+                                    tinypeak.removal = tinyPXx)$Peaks
             if (length (Xx) > 1) {
               lowPXx <- tinyPXx
             } else if (length (Xx) < 1) {
@@ -471,7 +474,7 @@ findSecondaryClustersDensity <-
             }
             Yy <-
               flowDensity::getPeaks(stats::density(f_Cuts_temp@exprs[, 2], width = 1000),
-                                     tinypeak.removal = tinyPYy)$Peaks
+                                    tinypeak.removal = tinyPYy)$Peaks
             if (length (Yy) > 1) {
               lowPYy <- tinyPYy
             } else if (length (Yy) < 1) {
@@ -598,7 +601,7 @@ findSecondaryClustersDensity <-
       Xc2g[c(5, 6)] <- Xc2g[c(6, 5)]
       Yc2g[c(5, 6)] <- Yc2g[c(6, 5)]
     }
-
+    
     return(list(
       clusters = cbind(Xc2g, Yc2g),
       deviation = cbind(deviation2X, deviation2Y)
@@ -617,20 +620,21 @@ findTertiaryClustersDensity <-
     NumberOfSinglePos <- nrow(firstClusters$clusters)
     XcTert <- YcTert <- NULL
     deviation2X <- deviation2Y <- vector()
-
+    
     x_leftPrim <- firstClusters$clusters[1, 1]
     y_leftPrim <- firstClusters$clusters[1, 2]
     x_rightPrim <- firstClusters$clusters[NumberOfSinglePos, 1]
     y_rightPrim <- firstClusters$clusters[NumberOfSinglePos, 2]
-
-    mSlope <- (y_leftPrim - y_rightPrim) / (x_leftPrim - x_rightPrim)
+    
+    mSlope <-
+      (y_leftPrim - y_rightPrim) / (x_leftPrim - x_rightPrim)
     theta <- abs(atan(mSlope))
     rotate <-
-      matrix(c(cos(theta), sin(theta),-sin(theta), cos(theta)) , 2 , 2)
-
+      matrix(c(cos(theta), sin(theta), -sin(theta), cos(theta)) , 2 , 2)
+    
     if (nrow(f_remNegPrimSec) >= NumberOfSinglePos ^ 2 * 3) {
       # If less than 50 points for trip and quad pops together, then use vector addition
-
+      
       # find thresholds to divide the tertiary clusters
       highP <- 1
       lowP <- 0
@@ -653,18 +657,18 @@ findTertiaryClustersDensity <-
           break
         }
       }
-
+      
       Cuts <-
         c(min(f_remNegPrimSec@exprs[, 1]),
           Cuts,
           max(f_remNegPrimSec@exprs[, 1]))
-
+      
       # find coordiates of tertiary populations
       for (r1 in 1:(length(Cuts) - 1)) {
         indices <-
           intersect(which(f_remNegPrimSec@exprs[, 1] >= Cuts[r1]),
                     which(f_remNegPrimSec@exprs[, 1] < Cuts[r1 + 1]))
-
+        
         switch(r1,
                {
                  XxA <-
@@ -745,10 +749,11 @@ findTertiaryClustersDensity <-
         }
         f_remNegPrimSec_temp <-
           f_remNegPrimSec
-        f_remNegPrimSec_temp@exprs <- f_remNegPrimSec_temp@exprs[indices, ]
+        f_remNegPrimSec_temp@exprs <-
+          f_remNegPrimSec_temp@exprs[indices,]
         f_remNegPrimSec_temp@exprs[, c(1, 2)] <-
           t(t(rotate) %*% t(f_remNegPrimSec_temp@exprs[, c(1, 2)]))
-
+        
         highPXx <- 1
         lowPXx <- 0
         repeat {
@@ -826,7 +831,7 @@ findTertiaryClustersDensity <-
           YcTert <- c(YcTert, Yy)
         }
       }
-
+      
     } else {
       for (r1 in 1:4) {
         switch(r1,
@@ -920,7 +925,7 @@ findQuaternaryClusterDensity <-
         tinyP <- (highP + lowP) / 2
         XcQuad <-
           flowDensity::getPeaks(stats::density(f_onlyQuad@exprs[, 1], width = 1000),
-                                 tinypeak.removal = tinyP)$Peaks
+                                tinypeak.removal = tinyP)$Peaks
         if (length(XcQuad) < 1) {
           highP <- tinyP
         } else if (length(XcQuad) > 1) {
@@ -935,7 +940,7 @@ findQuaternaryClusterDensity <-
         tinyP <- (highP + lowP) / 2
         YcQuad <-
           flowDensity::getPeaks(stats::density(f_onlyQuad@exprs[, 2], width = 1000),
-                                 tinypeak.removal = tinyP)$Peaks
+                                tinypeak.removal = tinyP)$Peaks
         if (length(YcQuad) < 1) {
           highP <- tinyP
         } else if (length(YcQuad) > 1) {
@@ -998,36 +1003,40 @@ findPrimaryClusters <-
     CutAbovePrimary <- mean(scalingParam) * 2
     NumOfClusters <- NumberOfSinglePos ^ 2
     DataRemoved <- FinalResults <- NULL
-
-    up1max <- deGate(f, c(1), percentile = 0.999, use.percentile = TRUE)
-    up1min <- deGate(f, c(1), percentile = 0.001, use.percentile = TRUE)
-    up2max <- deGate(f, c(2), percentile = 0.999, use.percentile = TRUE)
-    up2min <- deGate(f, c(2), percentile = 0.001, use.percentile = TRUE)
-
+    
+    up1max <-
+      deGate(f, c(1), percentile = 0.999, use.percentile = TRUE)
+    up1min <-
+      deGate(f, c(1), percentile = 0.001, use.percentile = TRUE)
+    up2max <-
+      deGate(f, c(2), percentile = 0.999, use.percentile = TRUE)
+    up2min <-
+      deGate(f, c(2), percentile = 0.001, use.percentile = TRUE)
+    
     indices <-
       unique(c(
         which(f@exprs[, 1] >= 0.15 * (up1max - up1min) + up1min),
         which(f@exprs[, 2] >= 0.15 * (up2max - up2min) + up2min)
       ))
-
+    
     f_remNeg  <-
       f
     f_remNeg@exprs <-
-      f_remNeg@exprs[indices, ] # keep the non 15% bottom left corner (rn for removed neg)
+      f_remNeg@exprs[indices,] # keep the non 15% bottom left corner (rn for removed neg)
     f_onlyNeg <-
       f
     f_onlyNeg@exprs <-
-      f_onlyNeg@exprs[-indices, ] # keep the     15% bottom left corner
-
+      f_onlyNeg@exprs[-indices,] # keep the     15% bottom left corner
+    
     ClusterCentres <- vector()
-
+    
     #---- find 1st gen clusters------------------------------------------------------------------------------------------------------------------------#
-
+    
     # Calculate the threshold to remove events that are too positive. This makes it easier to find single positives.
     f_findExtremes_temp <- f
     f_remNeg_temp <- f_remNeg
     threshold <- 0.1
-
+    
     # find left and right primary
     dataTable <- table(data)
     clusterMeans2 <-
@@ -1042,7 +1051,7 @@ findPrimaryClusters <-
       if (i == minimum || i == emptyDroplets)
         next
       test <-
-        matrix(clusterMeans[c(emptyDroplets, minimum, i), ], ncol = 2)
+        matrix(clusterMeans[c(emptyDroplets, minimum, i),], ncol = 2)
       if (abs(det(cbind(a, test / 100))) < (dimensions[1] / (NumberOfSinglePos *
                                                              20)) &&
           clusterMeans[i, 2] < (1 - NumberOfSinglePos ^ 2 / 100) * dimensions[2])
@@ -1055,7 +1064,7 @@ findPrimaryClusters <-
       selection[(dataTable[selection] > max(dataTable[selection]) / 4)]
     realFirstCluster1 <-
       selection[which.max(clusterMeans[selection, 2])]
-
+    
     # collinear1 <- realFirstCluster1
     # for (i in 1:nrow(clusterMeans)) {
     #   if (i == realFirstCluster1 || i == emptyDroplets)
@@ -1064,7 +1073,7 @@ findPrimaryClusters <-
     #   if (abs(det(cbind(a, test/100))) < (dimensions[1]/(NumberOfSinglePos*20)))
     #     collinear1 <- c(collinear1, i)
     # }
-
+    
     clusterMeans2 <-
       clusterMeans[-c(emptyDroplets, collinear1, remove), , drop = FALSE]
     if (length(clusterMeans2) == 0)
@@ -1077,7 +1086,7 @@ findPrimaryClusters <-
       if (i == minimum || i == emptyDroplets)
         next
       test <-
-        matrix(clusterMeans[c(emptyDroplets, minimum, i), ], ncol = 2)
+        matrix(clusterMeans[c(emptyDroplets, minimum, i),], ncol = 2)
       if (abs(det(cbind(a, test / 100))) < (dimensions[2] / (NumberOfSinglePos *
                                                              20)) &&
           clusterMeans[i, 1] < (1 - NumberOfSinglePos ^ 2 / 100) * dimensions[1])
@@ -1091,15 +1100,8 @@ findPrimaryClusters <-
       selection[(dataTable[selection] > max(dataTable[selection]) / 4)]
     realFirstCluster2 <-
       selection[which.max(clusterMeans[selection, 1])]
-
+    
     if (dataTable[realFirstCluster2] < dataTable[realFirstCluster1] / 10) {
-      cat(
-        paste(
-          "Something wrong with primary cluster detection (Ch2: only",
-          dataTable[realFirstCluster2],
-          "droplets). Trying again..."
-        )
-      )
       remove <- c(remove, collinear2)
       return(
         findPrimaryClusters(
@@ -1116,15 +1118,8 @@ findPrimaryClusters <-
         )
       )
     }
-
+    
     if (dataTable[realFirstCluster1] < dataTable[realFirstCluster2] / 10) {
-      cat(
-        paste(
-          "Something wrong with primary cluster detection (Ch1: only",
-          dataTable[realFirstCluster1],
-          "droplets). Trying again..."
-        )
-      )
       remove <- c(remove, collinear1)
       return(
         findPrimaryClusters(
@@ -1141,22 +1136,23 @@ findPrimaryClusters <-
         )
       )
     }
-
+    
     x_leftPrim <- clusterMeans[realFirstCluster1, 1]
     y_leftPrim <- clusterMeans[realFirstCluster1, 2]
     x_rightPrim <- clusterMeans[realFirstCluster2, 1]
     y_rightPrim <- clusterMeans[realFirstCluster2, 2]
-
-    mSlope <- (y_leftPrim - y_rightPrim) / (x_leftPrim - x_rightPrim)
+    
+    mSlope <-
+      (y_leftPrim - y_rightPrim) / (x_leftPrim - x_rightPrim)
     theta <- abs(atan(mSlope))
     rotate <-
-      matrix(c(cos(theta), sin(theta),-sin(theta), cos(theta)) , 2 , 2)
-
+      matrix(c(cos(theta), sin(theta), -sin(theta), cos(theta)) , 2 , 2)
+    
     Rot_xy_leftPrim <-
       rotate %*% c(x_leftPrim, y_leftPrim) # coordinates of rotated left  primary cluster
     Rot_xy_rightPrim <-
       rotate %*% c(x_rightPrim, y_rightPrim) # coordinates of rotated right primary cluster
-
+    
     f_findExtremes_temp@exprs[, c(1, 2)] <-
       t(rotate %*% t(f_findExtremes_temp@exprs[, c(1, 2)]))
     f_remNeg_temp@exprs    [, c(1, 2)] <-
@@ -1177,8 +1173,8 @@ findPrimaryClusters <-
       which(f_remNeg_temp@exprs[, 2] <= (
         max(Rot_xy_leftPrim[2], Rot_xy_rightPrim[2]) + CutAbovePrimary * ScaleChop
       ))
-    f_remNeg_temp@exprs <- f_remNeg_temp@exprs[indices, ]
-
+    f_remNeg_temp@exprs <- f_remNeg_temp@exprs[indices,]
+    
     # find thresholds to divide the primary clusters
     highP <- 1
     lowP <- 0
@@ -1206,7 +1202,7 @@ findPrimaryClusters <-
     Xc <- Yc <- NULL
     Cuts <-
       c(min(f_remNeg_temp@exprs[, 1]), Cuts, max(f_remNeg_temp@exprs[, 1]))
-
+    
     # find the coordinates of the primary clusters
     for (r1 in 1:(length(Cuts) - 1)) {
       indices <-
@@ -1214,15 +1210,15 @@ findPrimaryClusters <-
                   which(f_remNeg_temp@exprs[, 1] < Cuts[r1 + 1]))
       f_Cuts_temp <-
         f_remNeg_temp
-      f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices, ]
+      f_Cuts_temp@exprs <- f_Cuts_temp@exprs[indices,]
       f_Cuts_temp@exprs[, c(1, 2)] <-
         t(t(rotate) %*% t(f_Cuts_temp@exprs[, c(1, 2)]))
       Xx <-
         flowDensity::getPeaks(stats::density(f_Cuts_temp@exprs[, 1], width = 1000),
-                               tinypeak.removal = newP)$Peaks
+                              tinypeak.removal = newP)$Peaks
       Yy <-
         flowDensity::getPeaks(stats::density(f_Cuts_temp@exprs[, 2], width = 1000),
-                               tinypeak.removal = newP)$Peaks
+                              tinypeak.removal = newP)$Peaks
       if (length(Xx) > 1 || length(Yy) > 1) {
         highP <- 1
         lowP <- 0
@@ -1233,10 +1229,10 @@ findPrimaryClusters <-
             break
           Xx <-
             flowDensity::getPeaks(stats::density(f_Cuts_temp@exprs[, 1], width = 1000),
-                                   tinypeak.removal = newP)$Peaks
+                                  tinypeak.removal = newP)$Peaks
           Yy <-
             flowDensity::getPeaks(stats::density(f_Cuts_temp@exprs[, 2], width = 1000),
-                                   tinypeak.removal = newP)$Peaks
+                                  tinypeak.removal = newP)$Peaks
           if (length(Xx) > 1 || length(Yy) > 1) {
             highP <- newP
           } else if (length(Xx) < 1 || length(Yy) < 1) {
@@ -1249,14 +1245,14 @@ findPrimaryClusters <-
       Xc <- c(Xc, Xx[1])
       Yc <- c(Yc, Yy[1])
     }
-
+    
     densPrimaries <- cbind(Xc, Yc)
     firstClusters <- vector()
     distMatrix <- vector()
     for (i in 1:nrow(densPrimaries)) {
       temp <-
         lapply(1:nrow(clusterMeans), function(x)
-          return(clusterMeans[x, ] - densPrimaries[i, ]))
+          return(clusterMeans[x,] - densPrimaries[i,]))
       rowSums <-
         sapply(1:length(temp), function(x)
           return(sum(abs(unlist(
@@ -1287,7 +1283,7 @@ findPrimaryClusters_old <-
       if (i == minimum || i == emptyDroplets)
         next
       test <-
-        matrix(clusterMeans[c(emptyDroplets, minimum, i), ], ncol = 2)
+        matrix(clusterMeans[c(emptyDroplets, minimum, i),], ncol = 2)
       if (abs(det(cbind(a, test / 100))) < (dimensions[1] / 100))
         collinear1 <- c(collinear1, i)
     }
@@ -1298,7 +1294,7 @@ findPrimaryClusters_old <-
       selection[(dataTable[selection] > max(dataTable[selection]) / 4)]
     realFirstCluster1 <-
       selection[which.min(clusterMeans[selection, 1])]
-
+    
     clusterMeans2 <-
       clusterMeans[-c(emptyDroplets, collinear1, remove), , drop = FALSE]
     if (length(clusterMeans2) == 0)
@@ -1311,7 +1307,7 @@ findPrimaryClusters_old <-
       if (i == minimum || i == emptyDroplets)
         next
       test <-
-        matrix(clusterMeans[c(emptyDroplets, minimum, i), ], ncol = 2)
+        matrix(clusterMeans[c(emptyDroplets, minimum, i),], ncol = 2)
       if (abs(det(cbind(a, test / 100))) < (dimensions[2] / 100))
         collinear2 <- c(collinear2, i)
     }
@@ -1323,23 +1319,17 @@ findPrimaryClusters_old <-
       selection[(dataTable[selection] > max(dataTable[selection]) / 4)]
     realFirstCluster2 <-
       selection[which.min(clusterMeans[selection, 2])]
-
-    if (dataTable[realFirstCluster2] < dataTable[realFirstCluster1] / 4) {
-      warning(
-        "Something wrong with initial cluster detection, to few events for Ch1 amplitude, try again..."
-      )
+    
+    if (dataTable[realFirstCluster2] < dataTable[realFirstCluster1] / 5) {
       remove <- c(remove, collinear2)
       return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, dimensions))
     }
-
-    if (dataTable[realFirstCluster1] < dataTable[realFirstCluster2] / 4) {
-      warning(
-        "Something wrong with initial cluster detection, to few events for Ch1 amplitude, try again...."
-      )
+    
+    if (dataTable[realFirstCluster1] < dataTable[realFirstCluster2] / 5) {
       remove <- c(remove, collinear1)
       return(findPrimaryClusters(data, clusterMeans, emptyDroplets, remove, dimensions))
     }
-
+    
     clusterMeans2 <-
       clusterMeans[-c(emptyDroplets, collinear1, collinear2), , drop = FALSE]
     moreFirstClusters <- vector()
@@ -1347,7 +1337,8 @@ findPrimaryClusters_old <-
     clusterMeans2 <-
       clusterMeans2[clusterMeans2[, 1]  < counter, , drop = FALSE]
     counter <- clusterMeans[realFirstCluster1, 2]
-    temp <- clusterMeans2[clusterMeans2[, 2]  < counter, , drop = FALSE]
+    temp <-
+      clusterMeans2[clusterMeans2[, 2]  < counter, , drop = FALSE]
     repeat {
       if (length(temp) == 0) {
         break
@@ -1366,7 +1357,7 @@ findPrimaryClusters_old <-
         }
       }
     }
-
+    
     #   newTable <- dataTable[-c(emptyDroplets, realFirstCluster1, realFirstCluster2)]
     #   moreFirstClusters <- names(newTable[newTable > (mean(dataTable[c(realFirstCluster1, realFirstCluster2)]))/2])
     #
@@ -1384,13 +1375,13 @@ findSecondaryClusters <-
            counts) {
     threshold <- dimensions / 5
     clusterMeans2 <-
-      clusterMeans[-c(emptyDroplets, firstClusters, remove), ]
+      clusterMeans[-c(emptyDroplets, firstClusters, remove),]
     if (length(clusterMeans2) == 0)
       return(list(clusters = 0, correctionFactor = 0))
     secondClusters <- vector()
     correction <- list()
     correction[[length(firstClusters) + 1]] <- 0
-
+    
     if (nrow(clusterMeans2) >= sum(1:(length(firstClusters) - 1))) {
       distMatrix <- vector()
       for (a in firstClusters) {
@@ -1400,7 +1391,7 @@ findSecondaryClusters <-
           temp <-
             lapply(1:nrow(clusterMeans2), function(x)
               return(
-                clusterMeans2[x, ] - (clusterMeans[a, ] + clusterMeans[b, ] - clusterMeans[emptyDroplets, ])
+                clusterMeans2[x,] - (clusterMeans[a,] + clusterMeans[b,] - clusterMeans[emptyDroplets,])
               ))
           #       temp2 <- lapply(1:length(temp), function(x) return(c(temp[[x]][1]*3, temp[[x]][2]/3)))
           rowSums <-
@@ -1420,7 +1411,7 @@ findSecondaryClusters <-
             next
           index <- index + 1
           distance <-
-            clusterMeans[secondClusters[index], ] - (clusterMeans[a, ] + clusterMeans[b, ] - clusterMeans[emptyDroplets, ])
+            clusterMeans[secondClusters[index],] - (clusterMeans[a,] + clusterMeans[b,] - clusterMeans[emptyDroplets,])
           if (sum(abs(distance)) > threshold) {
             secondClusters[index] = 0
           } else {
@@ -1431,7 +1422,7 @@ findSecondaryClusters <-
           }
         }
       }
-
+      
     } else {
       for (a in firstClusters) {
         corTemp <- 0
@@ -1447,7 +1438,7 @@ findSecondaryClusters <-
             temp <-
               lapply(1:nrow(clusterMeans2), function(x)
                 return(
-                  clusterMeans2[x, ] - (clusterMeans[a, ] + clusterMeans[b, ] - clusterMeans[emptyDroplets, ])
+                  clusterMeans2[x,] - (clusterMeans[a,] + clusterMeans[b,] - clusterMeans[emptyDroplets,])
                 ))
             rowSums <-
               sapply(1:length(temp), function(x)
@@ -1457,7 +1448,8 @@ findSecondaryClusters <-
             if (min(rowSums) < threshold) {
               minimum <- which.min(rowSums)
               cluster <- match(clusterMeans2[minimum], clusterMeans)
-              clusterMeans2 <- clusterMeans2[-minimum, , drop = FALSE]
+              clusterMeans2 <-
+                clusterMeans2[-minimum, , drop = FALSE]
               correction[[match(a, firstClusters)]] <-
                 c(correction[[match(a, firstClusters)]], temp[minimum])
               correction[[match(b, firstClusters)]] <-
@@ -1467,8 +1459,8 @@ findSecondaryClusters <-
               temp <-
                 lapply(1:nrow(clusterMeans2), function(x)
                   return(
-                    clusterMeans2[x, ] - (
-                      clusterMeans[a, ] + clusterMeans[b, ] - clusterMeans[emptyDroplets, ] + corTemp
+                    clusterMeans2[x,] - (
+                      clusterMeans[a,] + clusterMeans[b,] - clusterMeans[emptyDroplets,] + corTemp
                     )
                   ))
               rowSums <-
@@ -1478,8 +1470,10 @@ findSecondaryClusters <-
                   ))))
               if (min(rowSums) < threshold) {
                 minimum <- which.min(rowSums)
-                cluster <- match(clusterMeans2[minimum], clusterMeans)
-                clusterMeans2 <- clusterMeans2[-minimum, , drop = FALSE]
+                cluster <-
+                  match(clusterMeans2[minimum], clusterMeans)
+                clusterMeans2 <-
+                  clusterMeans2[-minimum, , drop = FALSE]
                 correction[[match(a, firstClusters)]] <-
                   c(correction[[match(a, firstClusters)]], temp[minimum])
                 correction[[match(b, firstClusters)]] <-
@@ -1490,7 +1484,7 @@ findSecondaryClusters <-
                 #correctionFactor <- c(correctionFactor, 0)
               }
             }
-
+            
             secondClusters <- c(secondClusters, cluster)
           }
         }
@@ -1505,12 +1499,12 @@ findSecondaryClusters <-
         correctionFactor[[i]] <- colMeans(temp)
       }
     }
-
+    
     if (max(secondClusters) == 0)
       return(list(clusters = secondClusters, correctionFactor = correctionFactor))
-
+    
     q <- stats::quantile(counts[secondClusters])
-
+    
     if ((stats::IQR(counts[secondClusters]) > q[3]) &&
         (q[3] > 5) && (q[1] < 5)) {
       remove <-
@@ -1554,7 +1548,7 @@ findSecondaryClusters <-
         )
       )
     }
-
+    
     ## the correction factor is the avarage distance between the estimated positions of secondClusters and the real positions
     list(clusters = secondClusters, correctionFactor = correctionFactor)
   }
@@ -1577,7 +1571,7 @@ findTertiaryClusters <-
       return(list(clusters = rep(0, 4)))
     thirdClusters1 <- vector()
     thirdClusters2 <- vector()
-
+    
     if (nrow(clusterMeans2) >= 4) {
       for (i in 1:4) {
         if (i < 3) {
@@ -1590,8 +1584,8 @@ findTertiaryClusters <-
           temp <-
             lapply(1:nrow(clusterMeans2), function(x)
               return(
-                clusterMeans2[x, ] - (
-                  clusterMeans[cluster, ] + clusterMeans[firstClusters[i], ] - clusterMeans[emptyDroplets, ] + correctionFactor[[i]]
+                clusterMeans2[x,] - (
+                  clusterMeans[cluster,] + clusterMeans[firstClusters[i],] - clusterMeans[emptyDroplets,] + correctionFactor[[i]]
                 )
               ))
           rowSums <-
@@ -1615,8 +1609,8 @@ findTertiaryClusters <-
           temp <-
             lapply(1:nrow(clusterMeans2), function(x)
               return(
-                clusterMeans2[x, ] - (
-                  clusterMeans[cluster, ] + clusterMeans[firstClusters[i], ] - clusterMeans[emptyDroplets, ] + correctionFactor[[i]]
+                clusterMeans2[x,] - (
+                  clusterMeans[cluster,] + clusterMeans[firstClusters[i],] - clusterMeans[emptyDroplets,] + correctionFactor[[i]]
                 )
               ))
           rowSums <-
@@ -1640,7 +1634,7 @@ findTertiaryClusters <-
           thirdClusters[i] = 0
         }
       }
-
+      
     } else {
       for (i in 1:4) {
         if (i < 3) {
@@ -1652,8 +1646,8 @@ findTertiaryClusters <-
           temp <-
             lapply(1:nrow(clusterMeans2), function(x)
               return(
-                clusterMeans2[x, ] - (
-                  clusterMeans[cluster, ] + clusterMeans[firstClusters[i], ] - 2 * clusterMeans[emptyDroplets, ] + correctionFactor[[i]]
+                clusterMeans2[x,] - (
+                  clusterMeans[cluster,] + clusterMeans[firstClusters[i],] - 2 * clusterMeans[emptyDroplets,] + correctionFactor[[i]]
                 )
               ))
           rowSums <-
@@ -1678,8 +1672,8 @@ findTertiaryClusters <-
           temp <-
             lapply(1:nrow(clusterMeans2), function(x)
               return(
-                clusterMeans2[x, ] - (
-                  clusterMeans[cluster, ] + clusterMeans[firstClusters[i], ] - 2 * clusterMeans[emptyDroplets, ] + correctionFactor[[i]]
+                clusterMeans2[x,] - (
+                  clusterMeans[cluster,] + clusterMeans[firstClusters[i],] - 2 * clusterMeans[emptyDroplets,] + correctionFactor[[i]]
                 )
               ))
           rowSums <-
@@ -1697,16 +1691,16 @@ findTertiaryClusters <-
           thirdClusters2 <- c(thirdClusters2, cluster)
         }
       }
-
+      
       thirdClusters <- c(thirdClusters2, thirdClusters1)
-
+      
     }
-
+    
     if (max(thirdClusters) == 0)
       return(list(clusters = thirdClusters))
-
+    
     q <- stats::quantile(counts[thirdClusters])
-
+    
     if ((stats::IQR(counts[thirdClusters]) > q[3]) &&
         (q[3] > 5) && (q[1] < 5)) {
       remove <-
@@ -1756,7 +1750,7 @@ findTertiaryClusters <-
         )
       )
     }
-
+    
     list(clusters = thirdClusters)
   }
 
@@ -1776,10 +1770,10 @@ findQuaternaryCluster <-
       return(0)
     rowSums <-
       sapply(1:nrow(clusterMeans), function(x)
-        return(sum(clusterMeans[x, ])))
+        return(sum(clusterMeans[x,])))
     rowSums2 <-
       sapply(1:nrow(clusterMeans2), function(x)
-        return(sum(clusterMeans2[x, ])))
+        return(sum(clusterMeans2[x,])))
     if (match(max(rowSums), rowSums) == match(max(rowSums2), rowSums)) {
       return(which.max(rowSums))
     } else {
@@ -1801,7 +1795,7 @@ mergeClusters <-
       for (i in 1:nrow(clusterMeans2)) {
         for (j in 1:nrow(clusterMeans)) {
           #threshold <- clusterMeans[j,]/as.integer(sqrt(length(finalResult))*1.5)
-          threshold <- sqrt(clusterMeans[j, ]) * p
+          threshold <- sqrt(clusterMeans[j,]) * p
           if (abs(clusterMeans2[i, 1] - clusterMeans[j, 1]) < threshold[1] &&
               abs(clusterMeans2[i, 2] - clusterMeans[j, 2]) < threshold[2]) {
             result[result == match(clusterMeans2[i], clusterMeans)] = j
@@ -1820,15 +1814,15 @@ adjustClusterMeans <-
     for (i in clusters) {
       if (i == 0)
         next
-      f@exprs <- as.matrix(data[result == i, ])
+      f@exprs <- as.matrix(data[result == i,])
       Xc <-
         flowDensity::getPeaks(stats::density(f@exprs[, 1], width = 1000), tinypeak.removal =
-                                 0.2)$Peaks[1]
+                                0.2)$Peaks[1]
       Yc <-
         flowDensity::getPeaks(stats::density(f@exprs[, 2], width = 1000), tinypeak.removal =
-                                 0.2)$Peaks[1]
+                                0.2)$Peaks[1]
       if (!is.null(Xc) && !is.null(Yc)) {
-        clusterMeans[i, ] <- c(Xc, Yc)
+        clusterMeans[i,] <- c(Xc, Yc)
       }
     }
     return(clusterMeans)
@@ -1844,15 +1838,14 @@ assignRain <-
            secondClusters,
            thirdClusters,
            fourthCluster,
-           flowDensity,
            scalingParam,
-           simililarityParam = 0.95) {
+           similarityParam = 0.95,
+           distanceParam = 0.2) {
     remove <- vector()
     sdeviations <- list()
-    S <- stats::var(data)
     rownames(data) <- 1:nrow(data)
     scalingHelper <- mean(scalingParam / 4)
-
+    
     # Calculate standard deviations:
     for (c in firstClusters) {
       if (c == 0)
@@ -1887,30 +1880,38 @@ assignRain <-
         sdeviation <- scalingParam
       sdeviations[[c]] <- sdeviation
     }
-
+    
     ## Empties to primary clusters:
     newData <-
-      subset(data,
-             !result %in% c(secondClusters, thirdClusters, fourthCluster))
+      subset(data,!result %in% c(secondClusters, thirdClusters, fourthCluster))
+    thisCluster <- which(rownames(newData) %in% which(result == 1))
+    S <- stats::var(newData[thisCluster, , drop = FALSE])
+    mahaDist <- stats::mahalanobis(newData, clusterMeans[1,], S)
     posEv <-
-      which(stats::mahalanobis(newData, clusterMeans[1, ], S) < 0.2)
-    result[as.numeric(rownames(newData[posEv, ]))] <- 1
+      which(mahaDist < stats::sd(mahaDist[thisCluster]))
+    temp1 <- which(newData[, 1] <= clusterMeans[1, 1])
+    temp2 <- which(newData[, 2] <= clusterMeans[1, 2])
+    posEv <- c(posEv, intersect(temp1, temp2))
+    result[as.numeric(rownames(newData[posEv,]))] <- 1
     newData <- newData[-posEv, , drop = FALSE]
     # Go through each cluster:
     for (c in firstClusters) {
       if (c == 0)
         next
+      thisCluster <-
+        which(rownames(newData) %in% which(result == c))
+      S <- stats::var(newData[thisCluster, , drop = FALSE])
+      mahaDist <- stats::mahalanobis(newData, clusterMeans[c,], S)
       posEv <-
-        which(stats::mahalanobis(newData, clusterMeans[c, ], S) < 0.2)
-      result[as.numeric(rownames(newData[posEv, ]))] <- c
+        which(mahaDist < stats::sd(mahaDist[thisCluster]))
+      result[as.numeric(rownames(newData[posEv,]))] <- c
       newData <- newData[-posEv, , drop = FALSE]
       sdC <- sdeviations[[c]]
       newData <-
-        subset(newData,
-               !(
-                 newData[, 1] > clusterMeans[c, 1] - sdC[1] &
-                   newData[, 2] > clusterMeans[c, 2] - sdC[2]
-               ))
+        subset(newData,!(
+          newData[, 1] > clusterMeans[c, 1] - sdC[1] &
+            newData[, 2] > clusterMeans[c, 2] - sdC[2]
+        ))
       #    newData <- newData[-intersect(as.numeric(rownames(newData)), which(result==c)),]
     }
     if (nrow(newData) > 0) {
@@ -1922,9 +1923,9 @@ assignRain <-
         for (row in 1:nrow(newData)) {
           m[row, c] <-
             distToLineSegment(
-              as.numeric(newData[row, ]),
-              as.numeric(clusterMeans[emptyDroplets, ]),
-              as.numeric(clusterMeans[firstClusters[c], ])
+              as.numeric(newData[row,]),
+              as.numeric(clusterMeans[emptyDroplets,]),
+              as.numeric(clusterMeans[firstClusters[c],])
             )
         }
       }
@@ -1932,15 +1933,15 @@ assignRain <-
         apply(m, 1, function (x)
           which(x == min(x, na.rm = TRUE))[1])
       for (r in 1:length(minimalDistance)) {
-        distPoint <- euc.dist(newData[r, ], clusterMeans[emptyDroplets, ])
+        distPoint <- euc.dist(newData[r,], clusterMeans[emptyDroplets,])
         distTotal <-
-          distPoint + euc.dist(newData[r, ], clusterMeans[firstClusters[minimalDistance[r]], ])
-        if (distPoint <= 0.2 * distTotal) {
+          distPoint + euc.dist(newData[r,], clusterMeans[firstClusters[minimalDistance[r]],])
+        if (distPoint <= distanceParam * distTotal) {
           result[as.numeric(rownames(newData)[r])] <- emptyDroplets
         } else {
           if (ncol(m) > 1) {
-            minAnd2ndMin <- sort(m[r, ], index.return = TRUE)
-            if (minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= simililarityParam
+            minAnd2ndMin <- sort(m[r,], index.return = TRUE)
+            if (minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= similarityParam
                 ||
                 (minAnd2ndMin$x[1] <= scalingHelper &&
                  minAnd2ndMin$x[2] <= scalingHelper)) {
@@ -1952,54 +1953,44 @@ assignRain <-
         }
       }
     }
-
+    
     ## primary to secondary clusters (3-plex and 4-plex only):
     if (!is.null(secondClusters) && sum(secondClusters) > 0) {
-      if (flowDensity) {
+      newData <-
+        subset(data,!result %in% c(emptyDroplets, thirdClusters, fourthCluster))
+      for (c in firstClusters) {
+        if (c == 0)
+          next
+        sdC <- sdeviations[[c]]
         newData <-
-          subset(data,
-                 !result %in% c(emptyDroplets, thirdClusters, fourthCluster))
-        for (c in firstClusters) {
-          if (c == 0)
-            next
-          sdC <- sdeviations[[c]]
-          newData <-
-            subset(newData,!(
-              newData[, 1] < (clusterMeans[c, 1] + sdC[1]) &
-                newData[, 2] < (clusterMeans[c, 2] + sdC[2])
-            ))
-          #   # if (clusterMeans[c,1] < clusterMeans[c,2]) {
-          #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]+3*sdC[1]) & newData[,2] < (clusterMeans[c,2]-2*sdC[2])))
-          #   # } else {
-          #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]-2*sdC[1]) & newData[,2] < (clusterMeans[c,2]+3*sdC[2])))
-          #   # }
-        }
-      } else {
-        newData <-
-          subset(
-            data,
-            !result %in% c(
-              emptyDroplets,
-              firstClusters,
-              thirdClusters,
-              fourthCluster
-            )
-          )
+          subset(newData, !(
+            newData[, 1] < (clusterMeans[c, 1] + sdC[1]) &
+              newData[, 2] < (clusterMeans[c, 2] + sdC[2])
+          ))
+        #   # if (clusterMeans[c,1] < clusterMeans[c,2]) {
+        #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]+3*sdC[1]) & newData[,2] < (clusterMeans[c,2]-2*sdC[2])))
+        #   # } else {
+        #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]-2*sdC[1]) & newData[,2] < (clusterMeans[c,2]+3*sdC[2])))
+        #   # }
       }
       for (c in secondClusters) {
         if (c == 0)
           next
+        thisCluster <-
+          which(rownames(newData) %in% which(result == c))
+        S <- stats::var(newData[thisCluster, , drop = FALSE])
+        mahaDist <-
+          stats::mahalanobis(newData, clusterMeans[c,], S)
         posEv <-
-          which(stats::mahalanobis(newData, clusterMeans[c, ], S) < 0.2)
-        result[as.numeric(rownames(newData[posEv, ]))] <- c
+          which(mahaDist < stats::sd(mahaDist[thisCluster]))
+        result[as.numeric(rownames(newData[posEv,]))] <- c
         newData <- newData[-posEv, , drop = FALSE]
         sdC <- sdeviations[[c]]
         newData <-
-          subset(newData,
-                 !(
-                   newData[, 1] > clusterMeans[c, 1] - sdC[1] &
-                     newData[, 2] > clusterMeans[c, 2] - sdC[2]
-                 ))
+          subset(newData,!(
+            newData[, 1] > clusterMeans[c, 1] - sdC[1] &
+              newData[, 2] > clusterMeans[c, 2] - sdC[2]
+          ))
       }
       if (nrow(newData) > 0) {
         i <- 1
@@ -2013,15 +2004,15 @@ assignRain <-
           for (row in 1:nrow(newData)) {
             m[row, c] <-
               distToLineSegment(
-                as.numeric(newData[row, ]),
-                as.numeric(clusterMeans[firstClusters[i], ]),
-                as.numeric(clusterMeans[secondClusters[c], ])
+                as.numeric(newData[row,]),
+                as.numeric(clusterMeans[firstClusters[i],]),
+                as.numeric(clusterMeans[secondClusters[c],])
               )
             m[row, c + length(secondClusters)] <-
               distToLineSegment(
-                as.numeric(newData[row, ]),
-                as.numeric(clusterMeans[firstClusters[j], ]),
-                as.numeric(clusterMeans[secondClusters[c], ])
+                as.numeric(newData[row,]),
+                as.numeric(clusterMeans[firstClusters[j],]),
+                as.numeric(clusterMeans[secondClusters[c],])
               )
           }
           j <- j + 1
@@ -2033,7 +2024,7 @@ assignRain <-
         minimalDistance <-
           apply(m, 1, function (x)
             which(x == min(x, na.rm = TRUE))[1])
-
+        
         m2 <-
           matrix(
             nrow = nrow(newData),
@@ -2045,9 +2036,9 @@ assignRain <-
               next
             m2[row, cl1] <-
               distToRect(
-                as.numeric(clusterMeans[firstClusters[cl1], ]) - sdeviations[[firstClusters[cl1]]],
-                as.numeric(clusterMeans[firstClusters[cl1], ]) + sdeviations[[firstClusters[cl1]]],
-                as.numeric(newData[row, ])
+                as.numeric(clusterMeans[firstClusters[cl1],]) - sdeviations[[firstClusters[cl1]]],
+                as.numeric(clusterMeans[firstClusters[cl1],]) + sdeviations[[firstClusters[cl1]]],
+                as.numeric(newData[row,])
               )
           }
           for (cl2 in 1:length(secondClusters)) {
@@ -2056,50 +2047,53 @@ assignRain <-
             col <- cl2 + length(firstClusters)
             m2[row, col] <-
               distToRect(
-                as.numeric(clusterMeans[secondClusters[cl2], ]) - sdeviations[[secondClusters[cl2]]],
-                as.numeric(clusterMeans[secondClusters[cl2], ]) + sdeviations[[secondClusters[cl2]]],
-                as.numeric(newData[row, ])
+                as.numeric(clusterMeans[secondClusters[cl2],]) - sdeviations[[secondClusters[cl2]]],
+                as.numeric(clusterMeans[secondClusters[cl2],]) + sdeviations[[secondClusters[cl2]]],
+                as.numeric(newData[row,])
               )
           }
         }
         minimalClDistance <-
           apply(m2, 1, function (x)
             which(x == min(x, na.rm = TRUE))[1])
-
-
+        
+        
         helper <- c(1, 1, 1, 2, 2, 3, 2, 3, 4, 3, 4, 4)
         if (length(secondClusters) == 3)
           helper <- c(1, 1, 2, 2, 3, 3)
         helper2 <- rep(1:length(secondClusters), 2)
         helper5 <- c(firstClusters, secondClusters)
-
+        
         for (r in 1:length(minimalDistance)) {
           if (m2[r, minimalClDistance[r]] <= m[r, minimalDistance[r]]) {
             result[as.numeric(rownames(newData)[r])] <-
               helper5[minimalClDistance[r]]
             next
           }
-
+          
           distPoint <-
-            euc.dist(newData[r, ], clusterMeans[firstClusters[helper[minimalDistance[r]]], ] +
+            euc.dist(newData[r,], clusterMeans[firstClusters[helper[minimalDistance[r]]],] +
                        sdeviations[[firstClusters[helper[minimalDistance[r]]]]])
           distTotal <-
-            distPoint + euc.dist(newData[r, ], clusterMeans[secondClusters[helper2[minimalDistance[r]]], ])
-
-          if (distPoint <= 0.2 * distTotal) {
+            distPoint + euc.dist(newData[r,], clusterMeans[secondClusters[helper2[minimalDistance[r]]],])
+          
+          if (distPoint <= distanceParam * distTotal) {
             result[as.numeric(rownames(newData)[r])] <-
               firstClusters[helper[minimalDistance[r]]]
           } else {
             if (ncol(m) > 1) {
-              minAnd2ndMin <- sort(m[r, ], index.return = TRUE)
-              if ((minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= simililarityParam &&
-                   helper2[minAnd2ndMin$ix[1]] != helper2[minAnd2ndMin$ix[2]])
-                  ||
-                  ((
-                    minAnd2ndMin$x[1] <= scalingHelper &&
-                    minAnd2ndMin$x[2] <= scalingHelper
-                  ) && helper2[minAnd2ndMin$ix[1]] != helper2[minAnd2ndMin$ix[2]]
-                  )) {
+              minAnd2ndMin <- sort(m[r,], index.return = TRUE)
+              if ((
+                minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= similarityParam &&
+                helper2[minAnd2ndMin$ix[1]] != helper2[minAnd2ndMin$ix[2]]
+              )
+              ||
+              ((
+                minAnd2ndMin$x[1] <= scalingHelper &&
+                minAnd2ndMin$x[2] <= scalingHelper
+              ) &&
+              helper2[minAnd2ndMin$ix[1]] != helper2[minAnd2ndMin$ix[2]]
+              )) {
                 remove <- c(remove, as.numeric(rownames(newData)[r]))
               }
             }
@@ -2109,54 +2103,44 @@ assignRain <-
         }
       }
     }
-
+    
     ## secondary to tertiary clusters (4-plex only):
     if (!is.null(thirdClusters) && sum(thirdClusters) > 0) {
-      if (flowDensity) {
+      newData <-
+        subset(data,!result %in% c(emptyDroplets, firstClusters, fourthCluster))
+      for (c in secondClusters) {
+        if (c == 0)
+          next
+        sdC <- sdeviations[[c]]
         newData <-
-          subset(data,
-                 !result %in% c(emptyDroplets, firstClusters, fourthCluster))
-        for (c in secondClusters) {
-          if (c == 0)
-            next
-          sdC <- sdeviations[[c]]
-          newData <-
-            subset(newData,!(
-              newData[, 1] < (clusterMeans[c, 1] + sdC[1]) &
-                newData[, 2] < (clusterMeans[c, 2] + sdC[2])
-            ))
-          #   # if (clusterMeans[c,1] < clusterMeans[c,2]) {
-          #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]+2*sdC[1]) & newData[,2] < (clusterMeans[c,2]-sdC[2])))
-          #   # } else {
-          #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]-sdC[1]) & newData[,2] < (clusterMeans[c,2]+2*sdC[2])))
-          #   # }
-        }
-      } else {
-        newData <-
-          subset(
-            data,
-            !result %in% c(
-              emptyDroplets,
-              firstClusters,
-              secondClusters,
-              fourthCluster
-            )
-          )
+          subset(newData, !(
+            newData[, 1] < (clusterMeans[c, 1] + sdC[1]) &
+              newData[, 2] < (clusterMeans[c, 2] + sdC[2])
+          ))
+        #   # if (clusterMeans[c,1] < clusterMeans[c,2]) {
+        #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]+2*sdC[1]) & newData[,2] < (clusterMeans[c,2]-sdC[2])))
+        #   # } else {
+        #   #   newData <- subset(newData, !(newData[,1] < (clusterMeans[c,1]-sdC[1]) & newData[,2] < (clusterMeans[c,2]+2*sdC[2])))
+        #   # }
       }
       for (c in thirdClusters) {
         if (c == 0)
           next
+        thisCluster <-
+          which(rownames(newData) %in% which(result == c))
+        S <- stats::var(newData[thisCluster, , drop = FALSE])
+        mahaDist <-
+          stats::mahalanobis(newData, clusterMeans[c,], S)
         posEv <-
-          which(stats::mahalanobis(newData, clusterMeans[c, ], S) < 0.2)
-        result[as.numeric(rownames(newData[posEv, ]))] <- c
+          which(mahaDist < stats::sd(mahaDist[thisCluster]))
+        result[as.numeric(rownames(newData[posEv,]))] <- c
         newData <- newData[-posEv, , drop = FALSE]
         sdC <- sdeviations[[c]]
         newData <-
-          subset(newData,
-                 !(
-                   newData[, 1] > clusterMeans[c, 1] - sdC[1] &
-                     newData[, 2] > clusterMeans[c, 2] - sdC[2]
-                 ))
+          subset(newData,!(
+            newData[, 1] > clusterMeans[c, 1] - sdC[1] &
+              newData[, 2] > clusterMeans[c, 2] - sdC[2]
+          ))
       }
       if (nrow(newData) > 0) {
         m <- matrix(nrow = nrow(newData),
@@ -2169,21 +2153,21 @@ assignRain <-
           for (row in 1:nrow(newData)) {
             m[row, c] <-
               distToLineSegment(
-                as.numeric(newData[row, ]),
-                as.numeric(clusterMeans[secondClusters[helper3[c]], ]),
-                as.numeric(clusterMeans[thirdClusters[c], ])
+                as.numeric(newData[row,]),
+                as.numeric(clusterMeans[secondClusters[helper3[c]],]),
+                as.numeric(clusterMeans[thirdClusters[c],])
               )
             m[row, c + length(thirdClusters)] <-
               distToLineSegment(
-                as.numeric(newData[row, ]),
-                as.numeric(clusterMeans[secondClusters[helper3[c + length(thirdClusters)]], ]),
-                as.numeric(clusterMeans[thirdClusters[c], ])
+                as.numeric(newData[row,]),
+                as.numeric(clusterMeans[secondClusters[helper3[c + length(thirdClusters)]],]),
+                as.numeric(clusterMeans[thirdClusters[c],])
               )
             m[row, c + 2 * length(thirdClusters)] <-
               distToLineSegment(
-                as.numeric(newData[row, ]),
-                as.numeric(clusterMeans[secondClusters[helper3[c + 2 * length(thirdClusters)]], ]),
-                as.numeric(clusterMeans[thirdClusters[c], ])
+                as.numeric(newData[row,]),
+                as.numeric(clusterMeans[secondClusters[helper3[c + 2 * length(thirdClusters)]],]),
+                as.numeric(clusterMeans[thirdClusters[c],])
               )
           }
         }
@@ -2201,9 +2185,9 @@ assignRain <-
               next
             m2[row, cl1] <-
               distToRect(
-                as.numeric(clusterMeans[secondClusters[cl1], ]) - sdeviations[[secondClusters[cl1]]],
-                as.numeric(clusterMeans[secondClusters[cl1], ]) + sdeviations[[secondClusters[cl1]]],
-                as.numeric(newData[row, ])
+                as.numeric(clusterMeans[secondClusters[cl1],]) - sdeviations[[secondClusters[cl1]]],
+                as.numeric(clusterMeans[secondClusters[cl1],]) + sdeviations[[secondClusters[cl1]]],
+                as.numeric(newData[row,])
               )
           }
           for (cl2 in 1:length(thirdClusters)) {
@@ -2212,16 +2196,16 @@ assignRain <-
             col <- cl2 + length(secondClusters)
             m2[row, col] <-
               distToRect(
-                as.numeric(clusterMeans[thirdClusters[cl2], ]) - sdeviations[[thirdClusters[cl2]]],
-                as.numeric(clusterMeans[thirdClusters[cl2], ]) + sdeviations[[thirdClusters[cl2]]],
-                as.numeric(newData[row, ])
+                as.numeric(clusterMeans[thirdClusters[cl2],]) - sdeviations[[thirdClusters[cl2]]],
+                as.numeric(clusterMeans[thirdClusters[cl2],]) + sdeviations[[thirdClusters[cl2]]],
+                as.numeric(newData[row,])
               )
           }
         }
         minimalClDistance <-
           apply(m2, 1, function (x)
             which(x == min(x, na.rm = TRUE))[1])
-
+        
         helper5 <- c(secondClusters, thirdClusters)
         for (r in 1:length(minimalDistance)) {
           if (m2[r, minimalClDistance[r]] <= m[r, minimalDistance[r]]) {
@@ -2230,24 +2214,27 @@ assignRain <-
             next
           }
           distPoint <-
-            euc.dist(newData[r, ], clusterMeans[secondClusters[helper3[minimalDistance[r]]], ] +
+            euc.dist(newData[r,], clusterMeans[secondClusters[helper3[minimalDistance[r]]],] +
                        sdeviations[[secondClusters[helper3[minimalDistance[r]]]]])
           distTotal <-
-            distPoint + euc.dist(newData[r, ], clusterMeans[thirdClusters[helper4[minimalDistance[r]]], ])
-          if (distPoint <= 0.2 * distTotal) {
+            distPoint + euc.dist(newData[r,], clusterMeans[thirdClusters[helper4[minimalDistance[r]]],])
+          if (distPoint <= distanceParam * distTotal) {
             result[as.numeric(rownames(newData)[r])] <-
               secondClusters[helper3[minimalDistance[r]]]
           } else {
             if (ncol(m) > 1) {
-              minAnd2ndMin <- sort(m[r, ], index.return = TRUE)
-              if ((minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= simililarityParam &&
-                   helper4[minAnd2ndMin$ix[1]] != helper4[minAnd2ndMin$ix[2]])
-                  ||
-                  ((
-                    minAnd2ndMin$x[1] <= scalingHelper &&
-                    minAnd2ndMin$x[2] <= scalingHelper
-                  ) && helper4[minAnd2ndMin$ix[1]] != helper4[minAnd2ndMin$ix[2]]
-                  )) {
+              minAnd2ndMin <- sort(m[r,], index.return = TRUE)
+              if ((
+                minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= similarityParam &&
+                helper4[minAnd2ndMin$ix[1]] != helper4[minAnd2ndMin$ix[2]]
+              )
+              ||
+              ((
+                minAnd2ndMin$x[1] <= scalingHelper &&
+                minAnd2ndMin$x[2] <= scalingHelper
+              ) &&
+              helper4[minAnd2ndMin$ix[1]] != helper4[minAnd2ndMin$ix[2]]
+              )) {
                 remove <- c(remove, as.numeric(rownames(newData)[r]))
               }
             }
@@ -2257,45 +2244,21 @@ assignRain <-
         }
       }
     }
-
+    
     ## tertiary to quaternary cluster (4-plex), secondary to quarternary (3-plex), primary to quarternary (2-plex) :
     if (!is.null(fourthCluster) && sum(fourthCluster) > 0) {
       if (!is.null(thirdClusters) && sum(thirdClusters) > 0) {
-        if (flowDensity) {
-          newData <-
-            subset(data,
-                   !result %in% c(emptyDroplets, firstClusters, secondClusters))
-        } else {
-          newData <-
-            subset(
-              data,
-              !result %in% c(
-                emptyDroplets,
-                firstClusters,
-                secondClusters,
-                thirdClusters
-              )
-            )
-        }
+        newData <-
+          subset(data,!result %in% c(emptyDroplets, firstClusters, secondClusters))
         prevClusters <- thirdClusters
       } else if (!is.null(secondClusters) &&
                  sum(secondClusters) > 0) {
-        if (flowDensity) {
-          newData <-
-            subset(data,!result %in% c(emptyDroplets, firstClusters))
-        } else {
-          newData <-
-            subset(data,
-                   !result %in% c(emptyDroplets, firstClusters, secondClusters))
-        }
+        newData <-
+          subset(data, !result %in% c(emptyDroplets, firstClusters))
         prevClusters <- secondClusters
-      } else if (!is.null(firstClusters) && sum(firstClusters) > 0) {
-        if (flowDensity) {
-          newData <- subset(data,!result %in% c(emptyDroplets))
-        } else {
-          newData <-
-            subset(data,!result %in% c(emptyDroplets, firstClusters))
-        }
+      } else if (!is.null(firstClusters) &&
+                 sum(firstClusters) > 0) {
+        newData <- subset(data, !result %in% c(emptyDroplets))
         prevClusters <- firstClusters
       } else {
         return(list(result = result, remove = unique(remove)))
@@ -2305,7 +2268,7 @@ assignRain <-
           next
         sdC <- sdeviations[[c]]
         newData <-
-          subset(newData,!(
+          subset(newData, !(
             newData[, 1] < (clusterMeans[c, 1] + sdC[1]) &
               newData[, 2] < (clusterMeans[c, 2] + sdC[2])
           ))
@@ -2316,14 +2279,18 @@ assignRain <-
                 stats::sd(data[result == c, 2], na.rm = TRUE))
         if (is.na(sum(sdC)))
           next
+        thisCluster <-
+          which(rownames(newData) %in% which(result == c))
+        S <- stats::var(newData[thisCluster, , drop = FALSE])
+        mahaDist <-
+          stats::mahalanobis(newData, clusterMeans[c,], S)
         posEv <-
-          which(stats::mahalanobis(newData, clusterMeans[c, ], S) < 0.2)
-        result[as.numeric(rownames(newData[posEv, ]))] <- c
+          which(mahaDist < stats::sd(mahaDist[thisCluster]))
+        result[as.numeric(rownames(newData[posEv,]))] <- c
         newData <- newData[-posEv, , drop = FALSE]
         newData <-
           subset(
-            newData,
-            !(
+            newData,!(
               newData[, 1] < clusterMeans[c, 1] + sdC[1] &
                 newData[, 1] > clusterMeans[c, 1] - sdC[1]
               &
@@ -2340,9 +2307,9 @@ assignRain <-
           for (row in 1:nrow(newData)) {
             m[row, c] <-
               distToLineSegment(
-                as.numeric(newData[row, ]),
-                as.numeric(clusterMeans[fourthCluster, ]),
-                as.numeric(clusterMeans[prevClusters[c], ])
+                as.numeric(newData[row,]),
+                as.numeric(clusterMeans[fourthCluster,]),
+                as.numeric(clusterMeans[prevClusters[c],])
               )
           }
         }
@@ -2351,24 +2318,25 @@ assignRain <-
             which(x == min(x, na.rm = TRUE))[1])
         for (r in 1:length(minimalDistance)) {
           distPoint <-
-            euc.dist(newData[r, ], clusterMeans[prevClusters[minimalDistance[r]], ] +
+            euc.dist(newData[r,], clusterMeans[prevClusters[minimalDistance[r]],] +
                        sdeviations[[prevClusters[minimalDistance[r]]]])
           distTotal <-
-            distPoint + euc.dist(newData[r, ], clusterMeans[fourthCluster, ])
-          if (distPoint <= 0.2 * distTotal) {
+            distPoint + euc.dist(newData[r,], clusterMeans[fourthCluster,])
+          if (distPoint <= distanceParam * distTotal) {
             result[as.numeric(rownames(newData)[r])] <-
               prevClusters[minimalDistance[r]]
           } else {
             if (ncol(m) > 1) {
-              minAnd2ndMin <- sort(m[r, ], index.return = TRUE)
-              if (minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= simililarityParam
+              minAnd2ndMin <- sort(m[r,], index.return = TRUE)
+              if (minAnd2ndMin$x[1] / minAnd2ndMin$x[2] >= similarityParam
                   ||
                   (minAnd2ndMin$x[1] <= scalingHelper &&
                    minAnd2ndMin$x[2] <= scalingHelper)) {
                 remove <- c(remove, as.numeric(rownames(newData)[r]))
               }
             }
-            result[as.numeric(rownames(newData)[r])] <- fourthCluster
+            result[as.numeric(rownames(newData)[r])] <-
+              fourthCluster
           }
         }
       }

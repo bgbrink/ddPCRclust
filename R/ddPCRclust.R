@@ -55,6 +55,8 @@ library(clue)
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up. Can be ignored if a template is provided.
 #' Else, a vector with length equal to \code{length(files)} should be provided, containing the number of markers used for the respective reaction.
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
+#' @param similarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.
+#' @param distanceParam When assigning rain between to clusters, typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. This parameter changes the ratio.
 #' @param template A csv file containing information about the individual ddPCR runs. An example template is provided with this package. For more information, please check the repository on github.
 #' @param fast Run a simpler version of the algorithm that is about 10x faster. For clean data, this can already deliver very good results. In any case useful to get a quick overview over the data.
 #' @param multithread Distribute the algorithm amongst all CPU cores to speed up the computation.
@@ -77,12 +79,21 @@ library(clue)
 #' @examples
 #' # Run ddPCRclust
 #' exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
-#' result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
+#' result <- ddPCRclust(files = exampleFiles[3], template = exampleFiles[9])
+#' 
+#' # Plot the results
+#' library(ggplot2)
+#' p <- ggplot(data = result$results$B01$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+#' p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = TRUE) +
+#'   ggtitle("flowPeaks example")+theme_bw() + theme(legend.position="none")
+#' p
 #'
 ddPCRclust <-
   function(files,
            numOfMarkers = 4,
            sensitivity = 1,
+           similarityParam = 0.95,
+           distanceParam = 0.2,
            template = NULL,
            fast = FALSE,
            multithread = FALSE) {
@@ -140,13 +151,14 @@ ddPCRclust <-
         ))
       }
     }
-
+    
     if (Sys.info()['sysname'] == "Windows" || !multithread) {
       nrOfCores <- 1
     } else {
       nrOfCores <- detectCores()
     }
-    dens_result <- sam_result <- peaks_result <- rep(0, length(files))
+    dens_result <-
+      sam_result <- peaks_result <- rep(0, length(files))
     names(dens_result) <-
       names(sam_result) <- names(peaks_result) <- ids
     if (length(files) > 1) {
@@ -159,6 +171,8 @@ ddPCRclust <-
           numOfMarkers = numOfMarkers,
           sensitivity = sensitivity,
           markerNames = markerNames,
+          similarityParam = similarityParam,
+          distanceParam = distanceParam,
           SIMPLIFY = FALSE,
           mc.cores = nrOfCores
         )
@@ -170,6 +184,8 @@ ddPCRclust <-
             numOfMarkers = numOfMarkers,
             sensitivity = sensitivity,
             markerNames = markerNames,
+            similarityParam = similarityParam,
+            distanceParam = distanceParam,
             SIMPLIFY = FALSE,
             mc.cores = nrOfCores
           )
@@ -180,6 +196,8 @@ ddPCRclust <-
             numOfMarkers = numOfMarkers,
             sensitivity = sensitivity,
             markerNames = markerNames,
+            similarityParam = similarityParam,
+            distanceParam = distanceParam,
             SIMPLIFY = FALSE,
             mc.cores = nrOfCores
           )
@@ -201,7 +219,9 @@ ddPCRclust <-
           file = csvFiles,
           numOfMarkers = numOfMarkers[[1]],
           sensitivity = sensitivity,
-          markerNames = markerNames[[1]]
+          markerNames = markerNames[[1]],
+          similarityParam = similarityParam,
+          distanceParam = distanceParam
         )
       if (!fast) {
         sam_result <-
@@ -209,14 +229,18 @@ ddPCRclust <-
             file = csvFiles,
             numOfMarkers = numOfMarkers[[1]],
             sensitivity = sensitivity,
-            markerNames = markerNames[[1]]
+            markerNames = markerNames[[1]],
+            similarityParam = similarityParam,
+            distanceParam = distanceParam
           )
         peaks_result <-
           peaks_wrapper(
             file = csvFiles,
             numOfMarkers = numOfMarkers[[1]],
             sensitivity = sensitivity,
-            markerNames = markerNames[[1]]
+            markerNames = markerNames[[1]],
+            similarityParam = similarityParam,
+            distanceParam = distanceParam
           )
       }
       superResults <- list()
@@ -261,11 +285,11 @@ exportPlots <-
   function(data,
            directory,
            annotations,
-           format = ".png",
+           format = "png",
            invert = FALSE) {
     directory <- normalizePath(directory, mustWork = TRUE)
     ifelse(!dir.exists(paste0(directory, "/", annotations[1])), dir.create(paste0(directory, "/", annotations[1])), FALSE)
-
+    
     for (i in 1:length(data)) {
       id <- names(data[i])
       result <- data[[i]]
@@ -347,7 +371,7 @@ exportPlots <-
           ) + theme(axis.text = element_text(size = 12),
                     axis.title = element_text(size = 14))
       }
-      ggsave(paste0(directory, "/", annotations[1], "/", id, format),
+      ggsave(paste0(directory, "/", annotations[1], "/", id, ".", format),
              p,
              dpi = 1200)
     }
@@ -547,12 +571,21 @@ dens_wrapper <-
   function(file,
            sensitivity = 1,
            numOfMarkers,
-           markerNames) {
+           markerNames,
+           similarityParam,
+           distanceParam) {
     missingClusters <- which(markerNames == "")
     result <-
       tryCatch(
         expr = withTimeout(
-          runDensity(file[, c(2, 1)], sensitivity, numOfMarkers, missingClusters),
+          runDensity(
+            file[, c(2, 1)],
+            sensitivity,
+            numOfMarkers,
+            missingClusters,
+            similarityParam,
+            distanceParam
+          ),
           timeout = 60
         ),
         TimeoutException = function(ex)
@@ -567,12 +600,21 @@ sam_wrapper <-
   function(file,
            sensitivity = 1,
            numOfMarkers,
-           markerNames) {
+           markerNames,
+           similarityParam,
+           distanceParam) {
     missingClusters <- which(markerNames == "")
     result <-
       tryCatch(
         expr = withTimeout(
-          runSam(file[, c(2, 1)], sensitivity, numOfMarkers, missingClusters),
+          runSam(
+            file[, c(2, 1)],
+            sensitivity,
+            numOfMarkers,
+            missingClusters,
+            similarityParam,
+            distanceParam
+          ),
           timeout = 60
         ),
         TimeoutException = function(ex)
@@ -587,12 +629,21 @@ peaks_wrapper <-
   function(file,
            sensitivity = 1,
            numOfMarkers,
-           markerNames) {
+           markerNames,
+           similarityParam,
+           distanceParam) {
     missingClusters <- which(markerNames == "")
     result <-
       tryCatch(
         expr = withTimeout(
-          runPeaks(file[, c(2, 1)], sensitivity, numOfMarkers, missingClusters),
+          runPeaks(
+            file[, c(2, 1)],
+            sensitivity,
+            numOfMarkers,
+            missingClusters,
+            similarityParam,
+            distanceParam
+          ),
           timeout = 60
         ),
         TimeoutException = function(ex)
@@ -635,8 +686,8 @@ ensemble_wrapper <-
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
-#' @param simililarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95% similarity. 
-#   A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted. 
+#' @param similarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.
+#' @param distanceParam When assigning rain between to clusters, typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. This parameter changes the ratio.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -662,32 +713,37 @@ runDensity <-
            sensitivity = 1,
            numOfMarkers,
            missingClusters = NULL,
-           simililarityParam = 0.95) {
+           similarityParam = 0.95,
+           distanceParam = 0.2) {
     # ****** Parameters *******
     scalingParam <- c(max(file[, 1]) / 25, max(file[, 2]) / 25)
     epsilon <- 0.02 / sensitivity ^ 3
     # *************************
-
+    
     data_dir <- system.file("extdata", package = "flowDensity")
     load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
-
+    
     f@exprs <-
       as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
     #file <- file[,c(2,1)] # switch axis to be consistent
-
+    
     DataRemoved <- FinalResults <- NULL
-
-    up1max <- deGate(f, c(1), percentile = 0.999, use.percentile = TRUE)
-    up1min <- deGate(f, c(1), percentile = 0.001, use.percentile = TRUE)
-    up2max <- deGate(f, c(2), percentile = 0.999, use.percentile = TRUE)
-    up2min <- deGate(f, c(2), percentile = 0.001, use.percentile = TRUE)
-
+    
+    up1max <-
+      deGate(f, c(1), percentile = 0.999, use.percentile = TRUE)
+    up1min <-
+      deGate(f, c(1), percentile = 0.001, use.percentile = TRUE)
+    up2max <-
+      deGate(f, c(2), percentile = 0.999, use.percentile = TRUE)
+    up2min <-
+      deGate(f, c(2), percentile = 0.001, use.percentile = TRUE)
+    
     indices <-
       unique(c(
         which(f@exprs[, 1] >= 0.15 * (up1max - up1min) + up1min),
         which(f@exprs[, 2] >= 0.15 * (up2max - up2min) + up2min)
       ))
-
+    
     f_remNeg  <-
       f
     f_remNeg@exprs <-
@@ -696,44 +752,45 @@ runDensity <-
       f
     f_onlyNeg@exprs <-
       f_onlyNeg@exprs[-indices, ] # keep the     15% bottom left corner
-
+    
     # coordinates of negative populations
     XcN <-
       flowDensity::getPeaks(stats::density(f_onlyNeg@exprs[, 1], width = 1000),
-                             tinypeak.removal = 0.2)$Peaks[1]
+                            tinypeak.removal = 0.2)$Peaks[1]
     YcN <-
       flowDensity::getPeaks(stats::density(f_onlyNeg@exprs[, 2], width = 1000),
-                             tinypeak.removal = 0.2)$Peaks[1]
-
+                            tinypeak.removal = 0.2)$Peaks[1]
+    
     emptyDroplets <- c(XcN, YcN)
     firstClusters <-
       secondClusters <- tertClusters <- quadCluster <- NULL
-
+    
     #---- find 1st gen clusters------------------------------------------------------------------------------------------------------------------------#
-
+    
     firstClusters <-
       findPrimaryClustersDensity(f, file, f_remNeg, numOfMarkers, scalingParam, epsilon)
-
+    
     NumberOfSinglePos <- nrow(firstClusters$clusters)
     NumOfClusters <- 2 ^ NumberOfSinglePos
-
+    
     f_findExtremes_temp <- f
-
+    
     x_leftPrim <- firstClusters$clusters[1, 1]
     y_leftPrim <- firstClusters$clusters[1, 2]
     x_rightPrim <- firstClusters$clusters[NumberOfSinglePos, 1]
     y_rightPrim <- firstClusters$clusters[NumberOfSinglePos, 2]
-
-    mSlope <- (y_leftPrim - y_rightPrim) / (x_leftPrim - x_rightPrim)
+    
+    mSlope <-
+      (y_leftPrim - y_rightPrim) / (x_leftPrim - x_rightPrim)
     theta <- abs(atan(mSlope))
     rotate <-
       matrix(c(cos(theta), sin(theta),-sin(theta), cos(theta)) , 2 , 2)
-
+    
     Rot_xy_leftPrim <-
       rotate %*% c(x_leftPrim, y_leftPrim) # coordinates of rotated left  primary cluster
     Rot_xy_rightPrim <-
       rotate %*% c(x_rightPrim, y_rightPrim) # coordinates of rotated right primary cluster
-
+    
     f_findExtremes_temp@exprs[, c(1, 2)] <-
       t(rotate %*% t(f_findExtremes_temp@exprs[, c(1, 2)]))
     upSlantmax <-
@@ -747,12 +804,12 @@ runDensity <-
              percentile = 0.001,
              use.percentile = TRUE)
     ScaleChop <-  (upSlantmax - upSlantmin) / max(file)
-
+    
     #---- remove 1st gen clusters------------------------------------------------------------------------------------------------------------------------#
-
+    
     f_temp <- f_remNeg
-
-
+    
+    
     for (o1 in 1:NumberOfSinglePos) {
       indices <-
         union(
@@ -767,10 +824,10 @@ runDensity <-
         )
       f_temp@exprs <- f_temp@exprs[indices, ]
     }
-
+    
     if (NumberOfSinglePos > 2) {
       #---- find 2nd gen clusters------------------------------------------------------------------------------------------------------------------------#
-
+      
       secondClusters <-
         findSecondaryClustersDensity(f,
                                      file,
@@ -779,9 +836,9 @@ runDensity <-
                                      firstClusters,
                                      scalingParam,
                                      epsilon)
-
+      
       #---- remove 2nd gen clusters----------------------------------------------------------------------------------------------------------------------#
-
+      
       for (o1 in 1:nrow(secondClusters$clusters)) {
         indices <-
           union(
@@ -803,10 +860,10 @@ runDensity <-
       f_temp@exprs[, c(1, 2)] <-
         t(rotate %*% t(f_temp@exprs[, c(1, 2)]))
     }
-
+    
     if (NumberOfSinglePos > 3) {
       #---- find 3rd gen clusters------------------------------------------------------------------------------------------------------------------------#
-
+      
       tertClusters <-
         findTertiaryClustersDensity(f,
                                     f_temp,
@@ -815,9 +872,9 @@ runDensity <-
                                     secondClusters,
                                     scalingParam,
                                     epsilon)
-
+      
       #---- remove 3rd gen clusters----------------------------------------------------------------------------------------------------------------------#
-
+      
       f_temp@exprs[, c(1, 2)] <-
         t(t(rotate) %*% t(f_temp@exprs[, c(1, 2)]))
       for (o1 in 1:4) {
@@ -839,10 +896,10 @@ runDensity <-
         f_temp@exprs <- f_temp@exprs[indices, ]
       }
     }
-
+    
     if (NumberOfSinglePos > 1) {
       #---- find the 4th gen cluster------------------------------------------------------------------------------------------------------------------------#
-
+      
       quadCluster <-
         findQuaternaryClusterDensity(f,
                                      f_temp,
@@ -851,9 +908,9 @@ runDensity <-
                                      secondClusters,
                                      tertClusters)
     }
-
+    
     #----------------------------------------------------------------------------------------------------------------------------------------------------------#
-
+    
     #
     posOfFirsts <- 2:(1 + nrow(firstClusters$clusters))
     ClusterCentres <- rbind(emptyDroplets, firstClusters$clusters)
@@ -861,7 +918,8 @@ runDensity <-
     if (length(secondClusters$clusters) > 0) {
       posOfSeconds <-
         (utils::tail(posOfFirsts, 1) + 1):(utils::tail(posOfFirsts, 1) + nrow(secondClusters$clusters))
-      ClusterCentres <- rbind(ClusterCentres, secondClusters$clusters)
+      ClusterCentres <-
+        rbind(ClusterCentres, secondClusters$clusters)
     }
     if (length(tertClusters$clusters) > 0) {
       posOfThirds <-
@@ -877,7 +935,7 @@ runDensity <-
       ClusterCentres <-
         rbind(ClusterCentres, abs(quadCluster$clusters))
     }
-
+    
     angles <-
       sapply(1:nrow(firstClusters$clusters), function(x)
         return(
@@ -926,7 +984,7 @@ runDensity <-
     }
     if (length(indices) > 0)
       names_indices <- names_indices[-indices]
-
+    
     result <- rep(0, nrow(f))
     newData <- f@exprs
     rownames(newData) <- 1:nrow(f)
@@ -950,7 +1008,7 @@ runDensity <-
           )
         )
     }
-
+    
     for (i in 1:nrow(newData)) {
       temp <-
         apply(ClusterCentres, 1, function(x) {
@@ -958,13 +1016,13 @@ runDensity <-
         })
       result[as.numeric(rownames(newData)[i])] <- which.min(temp)
     }
-
+    
     ClusterCentresNew <-
       t(sapply(1:NumOfClusters, function(x)
         return(colMeans(f@exprs[result == x, , drop = FALSE]))))
     ClusterCentresNew[which(is.nan(ClusterCentresNew))] <-
       ClusterCentres[which(is.nan(ClusterCentresNew))]
-
+    
     fDensResult <-
       assignRain(
         clusterMeans = ClusterCentresNew,
@@ -975,11 +1033,11 @@ runDensity <-
         secondClusters = posOfSeconds,
         thirdClusters = posOfThirds,
         fourthCluster = posOfFourth,
-        flowDensity = TRUE,
         scalingParam = scalingParam,
-        simililarityParam = simililarityParam
+        similarityParam = similarityParam,
+        distanceParam = distanceParam
       )
-
+    
     fDensResult$result[fDensResult$result == 0] <- 0 / 0
     if (NumberOfSinglePos < 4) {
       tempResult <- fDensResult$result
@@ -991,10 +1049,10 @@ runDensity <-
       fDensResult$result[which(tempResult == 8)] <- 9
       fDensResult$result[which(tempResult == 9)] <- 8
     }
-
+    
     removed <-
       c(fDensResult$removed, which(is.nan(fDensResult$result)))
-
+    
     NumOfEventsClust <-
       table(c(fDensResult$result, 1:(length(names) - 2))) - 1
     NumOfEventsClust <-
@@ -1002,7 +1060,7 @@ runDensity <-
     NumOfEventsClust <-
       c(NumOfEventsClust, sum(NumOfEventsClust)) # add on total
     names(NumOfEventsClust) = names
-
+    
     if (length(removed) > 0) {
       fDensResult$result[removed] <-
         length(names) - 1 # remove the removed ones
@@ -1029,8 +1087,8 @@ runDensity <-
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
-#' @param simililarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95% similarity. 
-#   A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted. 
+#' @param similarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.
+#' @param distanceParam When assigning rain between to clusters, typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. This parameter changes the ratio.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -1056,25 +1114,26 @@ runSam <-
            sensitivity = 1,
            numOfMarkers,
            missingClusters = NULL,
-           simililarityParam = 0.95) {
+           similarityParam = 0.95,
+           distanceParam = 0.2) {
     # ****** Parameters *******
     scalingParam <- c(max(file[, 1]) / 25, max(file[, 2]) / 25)
     epsilon <- 0.02 / sensitivity ^ 3
     m <- trunc(nrow(file) / 20)
     # *************************
-
+    
     data_dir <- system.file("extdata", package = "flowDensity")
     load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
-
+    
     f@exprs <-
       as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
-
+    
     #### Start of algorithm ####
     samRes <-
       SamSPECTRAL(
         data.points = as.matrix(file),
         dimensions = c(1, 2),
-        normal.sigma = (400 * sensitivity ^ 2),
+        normal.sigma = (200 * sensitivity ^ 2),
         separation.factor = (0.88 * sensitivity),
         m = m,
         talk = FALSE
@@ -1096,7 +1155,8 @@ runSam <-
         ))))
     badClusters <- match(temp[temp > sum(dimensions) * 25], temp)
     samTable <- table(samRes)
-    secondaryClusters <- tertiaryClusters <- quaternaryCluster <- NULL
+    secondaryClusters <-
+      tertiaryClusters <- quaternaryCluster <- NULL
     firstClusters <-
       findPrimaryClusters(
         samRes,
@@ -1157,14 +1217,15 @@ runSam <-
     }
     if (length(indices) > 0)
       names_indices <- names_indices[-indices]
-
+    
     if (length(firstClusters) == 1) {
       samResult <- c(emptyDroplets, firstClusters)
     }
     if (length(firstClusters) == 2) {
       quaternaryCluster <-
         findQuaternaryCluster(clusterMeans, emptyDroplets, badClusters, firstClusters)
-      samResult <- c(emptyDroplets, firstClusters, quaternaryCluster)
+      samResult <-
+        c(emptyDroplets, firstClusters, quaternaryCluster)
     }
     if (length(firstClusters) == 3) {
       secondaryClusters <-
@@ -1253,13 +1314,13 @@ runSam <-
         secondaryClusters$clusters,
         tertiaryClusters$clusters,
         quaternaryCluster,
-        FALSE,
         scalingParam,
-        simililarityParam
+        similarityParam,
+        distanceParam
       )
     samRes <- rain$result
     firstClusters <- clusterMeans[firstClusters, ]
-
+    
     for (missingCluster in deletions) {
       firstClusters <-
         insertRow(firstClusters, cbind(0, 0), missingCluster)
@@ -1273,12 +1334,13 @@ runSam <-
     if (length(removed) > 0) {
       finalSamRes[removed] <- length(names) - 1
     }
-
+    
     samCount <- c(clusterCount, length(removed))
     samCount <- c(samCount, sum(samCount))
     names(samCount) = names
     result <- cbind(data[, c(2, 1)], "Cluster" = finalSamRes)
-    partition <- as.cl_partition(c(finalSamRes, 1:(length(names) - 1)))
+    partition <-
+      as.cl_partition(c(finalSamRes, 1:(length(names) - 1)))
     return(
       list(
         data = result,
@@ -1298,8 +1360,8 @@ runSam <-
 #' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
-#' @param simililarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95% similarity. 
-#   A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted. 
+#' @param similarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.
+#' @param distanceParam When assigning rain between to clusters, typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. This parameter changes the ratio.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -1325,25 +1387,26 @@ runPeaks <-
            sensitivity = 1,
            numOfMarkers,
            missingClusters = NULL,
-           simililarityParam = 0.95) {
+           similarityParam = 0.95,
+           distanceParam = 0.2) {
     # ****** Parameters *******
     scalingParam <- c(max(file[, 1]) / 25, max(file[, 2]) / 25)
     epsilon <- 0.02 / sensitivity ^ 3
     # *************************
-
+    
     data_dir <- system.file("extdata", package = "flowDensity")
     load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
-
+    
     f@exprs <-
       as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
-
+    
     #### Start of algorithm ####
     fPeaksRes <-
       flowPeaks(
         file,
         tol = 0,
         h0 = (0.3 / sensitivity ^ 1.5),
-        h = (0.4 / sensitivity ^ 1.5)
+        h = (0.5 / sensitivity ^ 1.5)
       )
     data <- file
     clusterMeans <- fPeaksRes$peaks$mu
@@ -1359,7 +1422,8 @@ runPeaks <-
         ))))
     badClusters <- match(temp[temp > sum(dimensions) * 25], temp)
     fPeaksTable <- table(fPeaksRes$peaks.cluster)
-    secondaryClusters <- tertiaryClusters <- quaternaryCluster <- NULL
+    secondaryClusters <-
+      tertiaryClusters <- quaternaryCluster <- NULL
     firstClusters <-
       findPrimaryClusters(
         fPeaksRes$peaks.cluster,
@@ -1420,7 +1484,7 @@ runPeaks <-
     }
     if (length(indices) > 0)
       names_indices <- names_indices[-indices]
-
+    
     if (length(firstClusters) == 1) {
       fPeaksResult <- c(emptyDroplets, firstClusters)
     } else
@@ -1493,7 +1557,7 @@ runPeaks <-
                 quaternaryCluster
               )
           }
-
+    
     fPeaksRes$peaks.cluster <-
       mergeClusters(fPeaksRes$peaks.cluster,
                     clusterMeans,
@@ -1509,13 +1573,13 @@ runPeaks <-
         secondaryClusters$clusters,
         tertiaryClusters$clusters,
         quaternaryCluster,
-        FALSE,
         scalingParam,
-        simililarityParam
+        similarityParam,
+        distanceParam
       )
     fPeaksRes$peaks.cluster <- rain$result
     firstClusters <- clusterMeans[firstClusters, ]
-
+    
     for (missingCluster in deletions) {
       firstClusters <-
         insertRow(firstClusters, cbind(0, 0), missingCluster)
@@ -1525,12 +1589,13 @@ runPeaks <-
       finalPeaksRes[which(fPeaksRes$peaks.cluster == fPeaksResult[i])] <-
         names_indices[i]
     }
-    clusterCount <- table(c(finalPeaksRes, 1:(length(names) - 2))) - 1
+    clusterCount <-
+      table(c(finalPeaksRes, 1:(length(names) - 2))) - 1
     removed <- c(rain$removed, which(is.nan(finalPeaksRes)))
     if (length(removed) > 0) {
       finalPeaksRes[removed] <- length(names) - 1
     }
-
+    
     fPeaksCount <- c(clusterCount, length(removed))
     fPeaksCount <- c(fPeaksCount, sum(fPeaksCount))
     names(fPeaksCount) = names
@@ -1606,7 +1671,8 @@ calculateCPDs <-
             maxctrl <- cpd
           }
         }
-        countedResult[[id]][[marker]] <- list(counts = counts, cpd = cpd)
+        countedResult[[id]][[marker]] <-
+          list(counts = counts, cpd = cpd)
       }
       countedResult[[id]][["Empties"]] <- empties
       countedResult[[id]][["Total"]] <- total
@@ -1671,7 +1737,7 @@ createEnsemble <-
       names <- names(peaks$counts)
       listResults <- c(listResults, list(peaks$partition))
     }
-
+    
     if (length(listResults) == 0) {
       next
     } else if (length(listResults) == 1) {
@@ -1683,7 +1749,7 @@ createEnsemble <-
       comb <- cl_medoid(cens)
       comb_ids <- cl_class_ids(comb)
     }
-
+    
     superCounts <- table(comb_ids) - 1
     superCounts <- c(superCounts, sum(superCounts))
     names(superCounts) <- names

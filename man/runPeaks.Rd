@@ -4,7 +4,8 @@
 \alias{runPeaks}
 \title{Find the clusters using flowPeaks}
 \usage{
-runPeaks(file, sensitivity = 1, numOfMarkers, missingClusters = NULL)
+runPeaks(file, sensitivity = 1, numOfMarkers, missingClusters = NULL,
+  similarityParam = 0.95, distanceParam = 0.2)
 }
 \arguments{
 \item{file}{The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.}
@@ -14,6 +15,10 @@ runPeaks(file, sensitivity = 1, numOfMarkers, missingClusters = NULL)
 \item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up.}
 
 \item{missingClusters}{A vector containing the number of primary clusters, which are missing in this dataset according to the template.}
+
+\item{similarityParam}{If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.}
+
+\item{distanceParam}{When assigning rain between to clusters, typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. This parameter changes the ratio.}
 }
 \value{
 \item{data}{The original input data minus the removed events (for plotting)}

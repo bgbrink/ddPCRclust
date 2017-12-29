@@ -9,7 +9,8 @@
 \title{ddPCRclust
 A package for automated quantification of multiplexed ddPCR data}
 \usage{
-ddPCRclust(files, numOfMarkers = 4, sensitivity = 1, template = NULL,
+ddPCRclust(files, numOfMarkers = 4, sensitivity = 1,
+  similarityParam = 0.95, distanceParam = 0.2, template = NULL,
   fast = FALSE, multithread = FALSE)
 }
 \arguments{
@@ -20,6 +21,10 @@ Each row within the data frame represents a single droplet, each column the resp
 Else, a vector with length equal to \code{length(files)} should be provided, containing the number of markers used for the respective reaction.}
 
 \item{sensitivity}{An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
+
+\item{similarityParam}{If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.}
+
+\item{distanceParam}{When assigning rain between to clusters, typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. This parameter changes the ratio.}
 
 \item{template}{A csv file containing information about the individual ddPCR runs. An example template is provided with this package. For more information, please check the repository on github.}
 
@@ -66,7 +71,14 @@ Here is a list of all available supplemental functions: \cr
 \examples{
 # Run ddPCRclust
 exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
-result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
+result <- ddPCRclust(files = exampleFiles[3], template = exampleFiles[9])
+
+# Plot the results
+library(ggplot2)
+p <- ggplot(data = result$results$B01$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = TRUE) +
+  ggtitle("flowPeaks example")+theme_bw() + theme(legend.position="none")
+p
 
 }
 \seealso{
