@@ -97,6 +97,13 @@ ddPCRclust <-
            template = NULL,
            fast = FALSE,
            multithread = FALSE) {
+    if (!is.integer(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
+      stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
+    } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
+      stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
+    } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
+      stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
+    }
     time <- proc.time()
     ids <- annotations <- vector()
     markerNames <- list(c("M1", "M2", "M3", "M4"))
@@ -720,6 +727,14 @@ runDensity <-
     epsilon <- 0.02 / sensitivity ^ 3
     # *************************
     
+    if (!is.integer(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
+      stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
+    } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
+      stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
+    } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
+      stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
+    }
+    
     data_dir <- system.file("extdata", package = "flowDensity")
     load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
     
@@ -1122,6 +1137,14 @@ runSam <-
     m <- trunc(nrow(file) / 20)
     # *************************
     
+    if (!is.integer(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
+      stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
+    } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
+      stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
+    } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
+      stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
+    }
+    
     data_dir <- system.file("extdata", package = "flowDensity")
     load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
     
@@ -1393,6 +1416,14 @@ runPeaks <-
     scalingParam <- c(max(file[, 1]) / 25, max(file[, 2]) / 25)
     epsilon <- 0.02 / sensitivity ^ 3
     # *************************
+    
+    if (!is.integer(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
+      stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
+    } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
+      stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
+    } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
+      stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
+    }
     
     data_dir <- system.file("extdata", package = "flowDensity")
     load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
