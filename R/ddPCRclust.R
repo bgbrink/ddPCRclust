@@ -109,7 +109,7 @@ ddPCRclust <-
     }
     
     time <- proc.time()
-    numOfMarkers <- as.integer(numOfMarkers)
+    numOfMarkers <- as.numeric(numOfMarkers)
     ids <- annotations <- vector()
     markerNames <- list(c("M1", "M2", "M3", "M4"))
     ids <-
@@ -732,7 +732,7 @@ runDensity <-
     epsilon <- 0.02 / sensitivity ^ 3
     # *************************
     
-    if (!is.integer(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
+    if (!is.numeric(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
       stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
     } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
       stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
@@ -1144,7 +1144,7 @@ runSam <-
     m <- trunc(nrow(file) / 20)
     # *************************
     
-    if (!is.integer(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
+    if (!is.numeric(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
       stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
     } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
       stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
@@ -1426,7 +1426,7 @@ runPeaks <-
     epsilon <- 0.02 / sensitivity ^ 3
     # *************************
     
-    if (!is.integer(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
+    if (!is.numeric(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
       stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
     } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
       stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
