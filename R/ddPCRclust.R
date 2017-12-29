@@ -54,7 +54,7 @@ library(clue)
 #' Each row within the data frame represents a single droplet, each column the respective intensities per colour channel.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up. Can be ignored if a template is provided.
 #' Else, a vector with length equal to \code{length(files)} should be provided, containing the number of markers used for the respective reaction.
-#' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
+#' @param sensitivity A number between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param similarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.
 #' @param distanceParam When assigning rain between to clusters, typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. This parameter changes the ratio.
 #' @param template A csv file containing information about the individual ddPCR runs. An example template is provided with this package. For more information, please check the repository on github.
@@ -97,14 +97,19 @@ ddPCRclust <-
            template = NULL,
            fast = FALSE,
            multithread = FALSE) {
-    if (!is.integer(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
+    
+    if (!is.numeric(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
       stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
     } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
       stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
     } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
       stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
+    } else if (!is.numeric(sensitivity) || sensitivity > 2 || sensitivity < 0.1) {
+      stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
+    
     time <- proc.time()
+    numOfMarkers <- as.integer(numOfMarkers)
     ids <- annotations <- vector()
     markerNames <- list(c("M1", "M2", "M3", "M4"))
     ids <-
@@ -690,7 +695,7 @@ ensemble_wrapper <-
 #' Use the local density function of the flowDensity package to find the cluster centres of the ddPCR reaction. Clusters are then labelled based on their rotated position and lastly the rain is assigned.
 #'
 #' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.
-#' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
+#' @param sensitivity A number between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
 #' @param similarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.
@@ -733,6 +738,8 @@ runDensity <-
       stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
     } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
       stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
+    } else if (!is.numeric(sensitivity) || sensitivity > 2 || sensitivity < 0.1) {
+      stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
     
     data_dir <- system.file("extdata", package = "flowDensity")
@@ -1099,7 +1106,7 @@ runDensity <-
 #' Find the rain and assign it based on the distance to vector lines connecting the cluster centres.
 #'
 #' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.
-#' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
+#' @param sensitivity A number between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
 #' @param similarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.
@@ -1143,6 +1150,8 @@ runSam <-
       stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
     } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
       stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
+    } else if (!is.numeric(sensitivity) || sensitivity > 2 || sensitivity < 0.1) {
+      stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
     
     data_dir <- system.file("extdata", package = "flowDensity")
@@ -1380,7 +1389,7 @@ runSam <-
 #' Find the rain and assign it based on the distance to vector lines connecting the cluster centres.
 #'
 #' @param file The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.
-#' @param sensitivity An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
+#' @param sensitivity A number between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
 #' @param numOfMarkers The number of primary clusters that are expected according the experiment set up.
 #' @param missingClusters A vector containing the number of primary clusters, which are missing in this dataset according to the template.
 #' @param similarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.
@@ -1423,6 +1432,8 @@ runPeaks <-
       stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
     } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
       stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
+    } else if (!is.numeric(sensitivity) || sensitivity > 2 || sensitivity < 0.1) {
+      stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
     
     data_dir <- system.file("extdata", package = "flowDensity")

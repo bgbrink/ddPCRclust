@@ -20,7 +20,7 @@ Each row within the data frame represents a single droplet, each column the resp
 \item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up. Can be ignored if a template is provided.
 Else, a vector with length equal to \code{length(files)} should be provided, containing the number of markers used for the respective reaction.}
 
-\item{sensitivity}{An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
+\item{sensitivity}{A number between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
 
 \item{similarityParam}{If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.}
 

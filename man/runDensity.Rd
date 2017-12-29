@@ -10,7 +10,7 @@ runDensity(file, sensitivity = 1, numOfMarkers, missingClusters = NULL,
 \arguments{
 \item{file}{The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.}
 
-\item{sensitivity}{An integer between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
+\item{sensitivity}{A number between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
 
 \item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up.}
 
