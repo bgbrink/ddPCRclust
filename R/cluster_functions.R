@@ -1888,7 +1888,7 @@ assignRain <-
     S <- stats::var(newData[thisCluster, , drop = FALSE])
     mahaDist <- stats::mahalanobis(newData, clusterMeans[1,], S)
     posEv <-
-      which(mahaDist < stats::sd(mahaDist[thisCluster]))
+      which(mahaDist < mean(mahaDist[thisCluster]))
     temp1 <- which(newData[, 1] <= clusterMeans[1, 1])
     temp2 <- which(newData[, 2] <= clusterMeans[1, 2])
     posEv <- c(posEv, intersect(temp1, temp2))
@@ -1903,7 +1903,7 @@ assignRain <-
       S <- stats::var(newData[thisCluster, , drop = FALSE])
       mahaDist <- stats::mahalanobis(newData, clusterMeans[c,], S)
       posEv <-
-        which(mahaDist < stats::sd(mahaDist[thisCluster]))
+        which(mahaDist < mean(mahaDist[thisCluster]))
       result[as.numeric(rownames(newData[posEv,]))] <- c
       newData <- newData[-posEv, , drop = FALSE]
       sdC <- sdeviations[[c]]
@@ -1982,7 +1982,7 @@ assignRain <-
         mahaDist <-
           stats::mahalanobis(newData, clusterMeans[c,], S)
         posEv <-
-          which(mahaDist < stats::sd(mahaDist[thisCluster]))
+          which(mahaDist < mean(mahaDist[thisCluster]))
         result[as.numeric(rownames(newData[posEv,]))] <- c
         newData <- newData[-posEv, , drop = FALSE]
         sdC <- sdeviations[[c]]
@@ -2132,7 +2132,7 @@ assignRain <-
         mahaDist <-
           stats::mahalanobis(newData, clusterMeans[c,], S)
         posEv <-
-          which(mahaDist < stats::sd(mahaDist[thisCluster]))
+          which(mahaDist < mean(mahaDist[thisCluster]))
         result[as.numeric(rownames(newData[posEv,]))] <- c
         newData <- newData[-posEv, , drop = FALSE]
         sdC <- sdeviations[[c]]
@@ -2285,7 +2285,7 @@ assignRain <-
         mahaDist <-
           stats::mahalanobis(newData, clusterMeans[c,], S)
         posEv <-
-          which(mahaDist < stats::sd(mahaDist[thisCluster]))
+          which(mahaDist < mean(mahaDist[thisCluster]))
         result[as.numeric(rownames(newData[posEv,]))] <- c
         newData <- newData[-posEv, , drop = FALSE]
         newData <-
