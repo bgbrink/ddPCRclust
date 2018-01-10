@@ -31,20 +31,6 @@
 #' @include cluster_functions.R
 #' @include functions.R
 
-source("R/cluster_functions.R")
-source("R/functions.R")
-
-library(stats)
-library(utils)
-library(parallel)
-library(ggplot2)
-library(openxlsx)
-library(R.utils)
-library(flowDensity)
-library(SamSPECTRAL)
-library(flowPeaks)
-library(plotrix)
-library(clue)
 
 #' Run the ddPCRclust algorithm
 #'
@@ -80,12 +66,12 @@ library(clue)
 #' # Run ddPCRclust
 #' exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
 #' result <- ddPCRclust(files = exampleFiles[3], template = exampleFiles[9])
-#' 
+#'
 #' # Plot the results
 #' library(ggplot2)
 #' p <- ggplot(data = result$results$B01$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
 #' p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = TRUE) +
-#'   ggtitle("flowPeaks example")+theme_bw() + theme(legend.position="none")
+#'   ggtitle("B01 example")+theme_bw() + theme(legend.position="none")
 #' p
 #'
 ddPCRclust <-
@@ -97,14 +83,19 @@ ddPCRclust <-
            template = NULL,
            fast = FALSE,
            multithread = FALSE) {
-    
-    if (!is.numeric(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
-      stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
-    } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
+    if (!is.numeric(numOfMarkers) ||
+        numOfMarkers > 4 || numOfMarkers < 1) {
+      stop(
+        "Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported."
+      )
+    } else if (!is.numeric(similarityParam) ||
+               similarityParam > 1 || similarityParam < 0) {
       stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
-    } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
+    } else if (!is.numeric(distanceParam) ||
+               distanceParam > 1 || distanceParam < 0) {
       stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
-    } else if (!is.numeric(sensitivity) || sensitivity > 2 || sensitivity < 0.1) {
+    } else if (!is.numeric(sensitivity) ||
+               sensitivity > 2 || sensitivity < 0.1) {
       stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
     
@@ -302,7 +293,7 @@ exportPlots <-
     directory <- normalizePath(directory, mustWork = TRUE)
     ifelse(!dir.exists(paste0(directory, "/", annotations[1])), dir.create(paste0(directory, "/", annotations[1])), FALSE)
     
-    for (i in 1:length(data)) {
+    for (i in seq_along(data)) {
       id <- names(data[i])
       result <- data[[i]]
       if (is.null(result$data)) {
@@ -416,7 +407,7 @@ exportToExcel <-
     directory <- normalizePath(directory, mustWork = TRUE)
     ifelse(!dir.exists(paste0(directory, "/", annotations[1])), dir.create(paste0(directory, "/", annotations[1])), FALSE)
     dataToWrite <- NULL
-    for (i in 1:length(data)) {
+    for (i in seq_along(data)) {
       id <- names(data[i])
       result <- data[[i]]
       if (is.null(result$data)) {
@@ -512,7 +503,7 @@ exportToCSV <- function(data, directory, annotations, raw = FALSE) {
   directory <- normalizePath(directory, mustWork = TRUE)
   ifelse(!dir.exists(paste0(directory, "/", annotations[1])), dir.create(paste0(directory, "/", annotations[1])), FALSE)
   dataToWrite <- NULL
-  for (i in 1:length(data)) {
+  for (i in seq_along(data)) {
     id <- names(data[i])
     result <- data[[i]]
     if (is.null(result$data)) {
@@ -732,22 +723,23 @@ runDensity <-
     epsilon <- 0.02 / sensitivity ^ 3
     # *************************
     
-    if (!is.numeric(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
-      stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
-    } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
+    if (!is.numeric(numOfMarkers) ||
+        numOfMarkers > 4 || numOfMarkers < 1) {
+      stop(
+        "Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported."
+      )
+    } else if (!is.numeric(similarityParam) ||
+               similarityParam > 1 || similarityParam < 0) {
       stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
-    } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
+    } else if (!is.numeric(distanceParam) ||
+               distanceParam > 1 || distanceParam < 0) {
       stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
-    } else if (!is.numeric(sensitivity) || sensitivity > 2 || sensitivity < 0.1) {
+    } else if (!is.numeric(sensitivity) ||
+               sensitivity > 2 || sensitivity < 0.1) {
       stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
     
-    data_dir <- system.file("extdata", package = "flowDensity")
-    load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
-    
-    f@exprs <-
-      as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
-    #file <- file[,c(2,1)] # switch axis to be consistent
+    f <- methods::new("flowFrame", exprs = as.matrix(file))
     
     DataRemoved <- FinalResults <- NULL
     
@@ -762,25 +754,23 @@ runDensity <-
     
     indices <-
       unique(c(
-        which(f@exprs[, 1] >= 0.15 * (up1max - up1min) + up1min),
-        which(f@exprs[, 2] >= 0.15 * (up2max - up2min) + up2min)
+        which(flowCore::exprs(f)[, 1] >= 0.15 * (up1max - up1min) + up1min),
+        which(flowCore::exprs(f)[, 2] >= 0.15 * (up2max - up2min) + up2min)
       ))
     
-    f_remNeg  <-
-      f
-    f_remNeg@exprs <-
-      f_remNeg@exprs[indices, ] # keep the non 15% bottom left corner (rn for removed neg)
-    f_onlyNeg <-
-      f
-    f_onlyNeg@exprs <-
-      f_onlyNeg@exprs[-indices, ] # keep the     15% bottom left corner
+    f_remNeg  <- f
+    flowCore::exprs(f_remNeg) <-
+      flowCore::exprs(f_remNeg)[indices, ] # keep the non 15% bottom left corner (rn for removed neg)
+    f_onlyNeg <- f
+    flowCore::exprs(f_onlyNeg) <-
+      flowCore::exprs(f_onlyNeg)[-indices, ] # keep the     15% bottom left corner
     
     # coordinates of negative populations
     XcN <-
-      flowDensity::getPeaks(stats::density(f_onlyNeg@exprs[, 1], width = 1000),
+      flowDensity::getPeaks(stats::density(flowCore::exprs(f_onlyNeg)[, 1], width = 1000),
                             tinypeak.removal = 0.2)$Peaks[1]
     YcN <-
-      flowDensity::getPeaks(stats::density(f_onlyNeg@exprs[, 2], width = 1000),
+      flowDensity::getPeaks(stats::density(flowCore::exprs(f_onlyNeg)[, 2], width = 1000),
                             tinypeak.removal = 0.2)$Peaks[1]
     
     emptyDroplets <- c(XcN, YcN)
@@ -813,8 +803,8 @@ runDensity <-
     Rot_xy_rightPrim <-
       rotate %*% c(x_rightPrim, y_rightPrim) # coordinates of rotated right primary cluster
     
-    f_findExtremes_temp@exprs[, c(1, 2)] <-
-      t(rotate %*% t(f_findExtremes_temp@exprs[, c(1, 2)]))
+    flowCore::exprs(f_findExtremes_temp)[, c(1, 2)] <-
+      t(rotate %*% t(flowCore::exprs(f_findExtremes_temp)[, c(1, 2)]))
     upSlantmax <-
       deGate(f_findExtremes_temp,
              c(2),
@@ -832,19 +822,19 @@ runDensity <-
     f_temp <- f_remNeg
     
     
-    for (o1 in 1:NumberOfSinglePos) {
+    for (o1 in seq_len(NumberOfSinglePos)) {
       indices <-
         union(
           which(
-            f_temp@exprs[, 1] >= firstClusters$clusters[o1, 1] + ScaleChop * (scalingParam[1] +
-                                                                                firstClusters$deviation[o1, 1])
+            flowCore::exprs(f_temp)[, 1] >= firstClusters$clusters[o1, 1] + ScaleChop * (scalingParam[1] +
+                                                                                           firstClusters$deviation[o1, 1])
           ),
           which(
-            f_temp@exprs[, 2] >= firstClusters$clusters[o1, 2] + ScaleChop * (scalingParam[2] +
-                                                                                firstClusters$deviation[o1, 2])
+            flowCore::exprs(f_temp)[, 2] >= firstClusters$clusters[o1, 2] + ScaleChop * (scalingParam[2] +
+                                                                                           firstClusters$deviation[o1, 2])
           )
         )
-      f_temp@exprs <- f_temp@exprs[indices, ]
+      flowCore::exprs(f_temp) <- flowCore::exprs(f_temp)[indices, ]
     }
     
     if (NumberOfSinglePos > 2) {
@@ -861,26 +851,27 @@ runDensity <-
       
       #---- remove 2nd gen clusters----------------------------------------------------------------------------------------------------------------------#
       
-      for (o1 in 1:nrow(secondClusters$clusters)) {
+      for (o1 in seq_len(nrow(secondClusters$clusters))) {
         indices <-
           union(
             which(
-              f_temp@exprs[, 1] >= secondClusters$clusters[o1, 1] + ScaleChop * (scalingParam[1] +
-                                                                                   secondClusters$deviation[o1, 1])
+              flowCore::exprs(f_temp)[, 1] >= secondClusters$clusters[o1, 1] + ScaleChop * (scalingParam[1] +
+                                                                                              secondClusters$deviation[o1, 1])
             ),
             which(
-              f_temp@exprs[, 2] >= secondClusters$clusters[o1, 2] + ScaleChop * (scalingParam[2] +
-                                                                                   secondClusters$deviation[o1, 2])
+              flowCore::exprs(f_temp)[, 2] >= secondClusters$clusters[o1, 2] + ScaleChop * (scalingParam[2] +
+                                                                                              secondClusters$deviation[o1, 2])
             )
           )
         if (length(indices) <= 1) {
-          f_temp@exprs <- f_temp@exprs[c(indices, indices), ]
+          flowCore::exprs(f_temp) <-
+            flowCore::exprs(f_temp)[c(indices, indices), ]
           next
         }
-        f_temp@exprs <- f_temp@exprs[indices, ]
+        flowCore::exprs(f_temp) <- flowCore::exprs(f_temp)[indices, ]
       }
-      f_temp@exprs[, c(1, 2)] <-
-        t(rotate %*% t(f_temp@exprs[, c(1, 2)]))
+      flowCore::exprs(f_temp)[, c(1, 2)] <-
+        t(rotate %*% t(flowCore::exprs(f_temp)[, c(1, 2)]))
     }
     
     if (NumberOfSinglePos > 3) {
@@ -897,25 +888,26 @@ runDensity <-
       
       #---- remove 3rd gen clusters----------------------------------------------------------------------------------------------------------------------#
       
-      f_temp@exprs[, c(1, 2)] <-
-        t(t(rotate) %*% t(f_temp@exprs[, c(1, 2)]))
-      for (o1 in 1:4) {
+      flowCore::exprs(f_temp)[, c(1, 2)] <-
+        t(t(rotate) %*% t(flowCore::exprs(f_temp)[, c(1, 2)]))
+      for (o1 in seq_len(4)) {
         indices <-
           union(
             which(
-              f_temp@exprs[, 1] >= tertClusters$clusters[o1, 1] + ScaleChop * (scalingParam[1] +
-                                                                                 tertClusters$deviation[o1, 1])
+              flowCore::exprs(f_temp)[, 1] >= tertClusters$clusters[o1, 1] + ScaleChop * (scalingParam[1] +
+                                                                                            tertClusters$deviation[o1, 1])
             ),
             which(
-              f_temp@exprs[, 2] >= tertClusters$clusters[o1, 2] + ScaleChop * (scalingParam[2] +
-                                                                                 tertClusters$deviation[o1, 2])
+              flowCore::exprs(f_temp)[, 2] >= tertClusters$clusters[o1, 2] + ScaleChop * (scalingParam[2] +
+                                                                                            tertClusters$deviation[o1, 2])
             )
           )
         if (length(indices) <= 1) {
-          f_temp@exprs <- f_temp@exprs[c(indices, indices), ]
+          flowCore::exprs(f_temp) <-
+            flowCore::exprs(f_temp)[c(indices, indices), ]
           next
         }
-        f_temp@exprs <- f_temp@exprs[indices, ]
+        flowCore::exprs(f_temp) <- flowCore::exprs(f_temp)[indices, ]
       }
     }
     
@@ -959,22 +951,22 @@ runDensity <-
     }
     
     angles <-
-      sapply(1:nrow(firstClusters$clusters), function(x)
+      vapply(seq_len(nrow(firstClusters$clusters)), function(x)
         return(
           atan2(
             firstClusters$clusters[x, 1] - emptyDroplets[1],
             firstClusters$clusters[x, 2] - emptyDroplets[2]
           )
-        ))
+        ), double(length = 1))
     cuts <- c(0, 0.5 * pi / 4, 1.5 * pi / 4, pi / 2)
     for (i in missingClusters) {
       angles <- c(angles, cuts[i])
     }
     distMatrix <-
-      t(sapply(1:length(angles), function(x)
-        return(abs(angles[x] - cuts))))
+      t(vapply(seq_along(angles), function(x)
+        return(abs(angles[x] - cuts)), double(length = length(cuts))))
     order <- solve_LSAP(distMatrix)
-    deletions <- which(!1:4 %in% order)
+    deletions <- which(!seq_len(4) %in% order)
     deletions <- c(deletions, missingClusters)
     # deletions <- deletions[!deletions %in% missingClusters]
     # order <- order[1:nrow(firstClusters$clusters)]
@@ -999,7 +991,7 @@ runDensity <-
         "Removed",
         "Total"
       )
-    names_indices <- 1:length(names)
+    names_indices <- seq_along(names)
     indices <- vector()
     for (cl in deletions) {
       indices <- c(indices, grep(cl, names))
@@ -1008,9 +1000,9 @@ runDensity <-
       names_indices <- names_indices[-indices]
     
     result <- rep(0, nrow(f))
-    newData <- f@exprs
-    rownames(newData) <- 1:nrow(f)
-    for (c in 1:nrow(ClusterCentres)) {
+    newData <- flowCore::exprs(f)
+    rownames(newData) <- seq_len(nrow(f))
+    for (c in seq_len(nrow(ClusterCentres))) {
       result[as.numeric(rownames(newData[(
         newData[, 1] < ClusterCentres[c, 1] + scalingParam[1] &
           newData[, 1] > ClusterCentres[c, 1] - scalingParam[1]
@@ -1031,7 +1023,7 @@ runDensity <-
         )
     }
     
-    for (i in 1:nrow(newData)) {
+    for (i in seq_len(nrow(newData))) {
       temp <-
         apply(ClusterCentres, 1, function(x) {
           euc.dist(x, newData[i, ])
@@ -1040,15 +1032,17 @@ runDensity <-
     }
     
     ClusterCentresNew <-
-      t(sapply(1:NumOfClusters, function(x)
-        return(colMeans(f@exprs[result == x, , drop = FALSE]))))
+      t(vapply(seq_len(NumOfClusters), function(x)
+        return(colMeans(
+          flowCore::exprs(f)[result == x, , drop = FALSE]
+        )), double(length = 2)))
     ClusterCentresNew[which(is.nan(ClusterCentresNew))] <-
       ClusterCentres[which(is.nan(ClusterCentresNew))]
     
     fDensResult <-
       assignRain(
         clusterMeans = ClusterCentresNew,
-        data = f@exprs,
+        data = flowCore::exprs(f),
         result = result,
         emptyDroplets = 1,
         firstClusters = posOfFirsts,
@@ -1063,7 +1057,7 @@ runDensity <-
     fDensResult$result[fDensResult$result == 0] <- 0 / 0
     if (NumberOfSinglePos < 4) {
       tempResult <- fDensResult$result
-      for (i in 1:nrow(ClusterCentres)) {
+      for (i in seq_len(nrow(ClusterCentres))) {
         fDensResult$result[which(tempResult == i)] <- names_indices[i]
       }
     } else {
@@ -1076,7 +1070,7 @@ runDensity <-
       c(fDensResult$removed, which(is.nan(fDensResult$result)))
     
     NumOfEventsClust <-
-      table(c(fDensResult$result, 1:(length(names) - 2))) - 1
+      table(c(fDensResult$result, seq_len(length(names) - 2))) - 1
     NumOfEventsClust <-
       c(NumOfEventsClust, length(removed)) # add on removed
     NumOfEventsClust <-
@@ -1089,7 +1083,7 @@ runDensity <-
     }
     result <- cbind(file[, c(2, 1)], "Cluster" = fDensResult$result)
     partition <-
-      as.cl_partition(c(fDensResult$result, 1:(length(names) - 1)))
+      as.cl_partition(c(fDensResult$result, seq_len(length(names) - 1)))
     return(
       list(
         data = result,
@@ -1144,21 +1138,23 @@ runSam <-
     m <- trunc(nrow(file) / 20)
     # *************************
     
-    if (!is.numeric(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
-      stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
-    } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
+    if (!is.numeric(numOfMarkers) ||
+        numOfMarkers > 4 || numOfMarkers < 1) {
+      stop(
+        "Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported."
+      )
+    } else if (!is.numeric(similarityParam) ||
+               similarityParam > 1 || similarityParam < 0) {
       stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
-    } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
+    } else if (!is.numeric(distanceParam) ||
+               distanceParam > 1 || distanceParam < 0) {
       stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
-    } else if (!is.numeric(sensitivity) || sensitivity > 2 || sensitivity < 0.1) {
+    } else if (!is.numeric(sensitivity) ||
+               sensitivity > 2 || sensitivity < 0.1) {
       stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
     
-    data_dir <- system.file("extdata", package = "flowDensity")
-    load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
-    
-    f@exprs <-
-      as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
+    f <- methods::new("flowFrame", exprs = as.matrix(file))
     
     #### Start of algorithm ####
     samRes <-
@@ -1176,15 +1172,15 @@ runSam <-
         return(apply(data[samRes == x, ], 2, stats::median, na.rm = TRUE)))
     clusterMeans <- t(do.call(cbind, temp))
     rowSums <-
-      sapply(1:nrow(clusterMeans), function(x)
-        return(sum(clusterMeans[x, ])))
+      vapply(seq_len(nrow(clusterMeans)), function(x)
+        return(sum(clusterMeans[x, ])), double(length = 1))
     emptyDroplets <- match(min(rowSums), rowSums)
     dimensions <- c(max(data[1]), max(data[2]))
     temp <-
-      sapply(min(samRes, na.rm = TRUE):max(samRes, na.rm = TRUE), function(x)
+      vapply(min(samRes, na.rm = TRUE):max(samRes, na.rm = TRUE), function(x)
         return(abs(stats::var(
           data[samRes == x, 1], data[samRes == x, 2], na.rm = TRUE
-        ))))
+        ))), double(length = 1))
     badClusters <- match(temp[temp > sum(dimensions) * 25], temp)
     samTable <- table(samRes)
     secondaryClusters <-
@@ -1204,20 +1200,20 @@ runSam <-
       )
     ## estimate missing clusters based on angle:
     angles <-
-      sapply(1:length(firstClusters), function(x)
+      vapply(seq_along(firstClusters), function(x)
         return(
-          atan2(clusterMeans[firstClusters[x], 1] - clusterMeans[emptyDroplets, 1], clusterMeans[firstClusters[x], 2] -
-                  clusterMeans[emptyDroplets, 2])
-        ))
+          atan2(clusterMeans[firstClusters[x], 1] - clusterMeans[emptyDroplets, 1],
+                clusterMeans[firstClusters[x], 2] - clusterMeans[emptyDroplets, 2])
+        ), double(length = 1))
     cuts <- c(0, 0.5 * pi / 4, 1.5 * pi / 4, pi / 2)
     for (i in missingClusters) {
       angles <- c(angles, cuts[i])
     }
     distMatrix <-
-      t(sapply(1:length(angles), function(x)
-        return(abs(angles[x] - cuts))))
+      t(vapply(seq_along(angles), function(x)
+        return(abs(angles[x] - cuts)), double(length = length(cuts))))
     order <- solve_LSAP(distMatrix)
-    deletions <- which(!1:4 %in% order)
+    deletions <- which(!seq_len(4) %in% order)
     deletions <- c(deletions, missingClusters)
     # deletions <- deletions[!deletions %in% missingClusters]
     # order <- order[1:nrow(firstClusters$clusters)]
@@ -1242,7 +1238,7 @@ runSam <-
         "Removed",
         "Total"
       )
-    names_indices <- 1:length(names)
+    names_indices <- seq_along(names)
     indices <- vector()
     for (cl in deletions) {
       indices <- c(indices, grep(cl, names))
@@ -1358,10 +1354,11 @@ runSam <-
         insertRow(firstClusters, cbind(0, 0), missingCluster)
     }
     finalSamRes <- rep(0 / 0, length(samRes))
-    for (i in 1:length(samResult)) {
+    for (i in seq_along(samResult)) {
       finalSamRes[which(samRes == samResult[i])] <- names_indices[i]
     }
-    clusterCount <- table(c(finalSamRes, 1:(length(names) - 2))) - 1
+    clusterCount <-
+      table(c(finalSamRes, seq_len(length(names) - 2))) - 1
     removed <- c(rain$removed, which(is.nan(finalSamRes)))
     if (length(removed) > 0) {
       finalSamRes[removed] <- length(names) - 1
@@ -1372,7 +1369,7 @@ runSam <-
     names(samCount) = names
     result <- cbind(data[, c(2, 1)], "Cluster" = finalSamRes)
     partition <-
-      as.cl_partition(c(finalSamRes, 1:(length(names) - 1)))
+      as.cl_partition(c(finalSamRes, seq_len(length(names) - 1)))
     return(
       list(
         data = result,
@@ -1426,21 +1423,23 @@ runPeaks <-
     epsilon <- 0.02 / sensitivity ^ 3
     # *************************
     
-    if (!is.numeric(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
-      stop("Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported.")
-    } else if (!is.numeric(similarityParam) || similarityParam > 1 || similarityParam < 0) {
+    if (!is.numeric(numOfMarkers) ||
+        numOfMarkers > 4 || numOfMarkers < 1) {
+      stop(
+        "Invalid argument for numOfMarkers. Currently only the detection of 1-4 markers is supported."
+      )
+    } else if (!is.numeric(similarityParam) ||
+               similarityParam > 1 || similarityParam < 0) {
       stop("Invalid argument for similarityParam. Only values between 0 and 1 are supported.")
-    } else if (!is.numeric(distanceParam) || distanceParam > 1 || distanceParam < 0) {
+    } else if (!is.numeric(distanceParam) ||
+               distanceParam > 1 || distanceParam < 0) {
       stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
-    } else if (!is.numeric(sensitivity) || sensitivity > 2 || sensitivity < 0.1) {
+    } else if (!is.numeric(sensitivity) ||
+               sensitivity > 2 || sensitivity < 0.1) {
       stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
     
-    data_dir <- system.file("extdata", package = "flowDensity")
-    load(list.files(pattern = 'sampleFCS_1', data_dir, full.names = TRUE)) # load f to copy over later so we have an FCS file to use flowDensity
-    
-    f@exprs <-
-      as.matrix(file) # overide the FCS file. This allows us to use flowDensity on data that is not truely a FCS data.
+    f <- methods::new("flowFrame", exprs = as.matrix(file))
     
     #### Start of algorithm ####
     fPeaksRes <-
@@ -1453,15 +1452,15 @@ runPeaks <-
     data <- file
     clusterMeans <- fPeaksRes$peaks$mu
     rowSums <-
-      sapply(1:nrow(clusterMeans), function(x)
-        return(sum(clusterMeans[x, ])))
+      vapply(seq_len(nrow(clusterMeans)), function(x)
+        return(sum(clusterMeans[x, ])), double(length = 1))
     emptyDroplets <- match(min(rowSums), rowSums)
     dimensions <- c(max(data[1]), max(data[2]))
     temp <-
-      sapply(min(fPeaksRes$peaks.cluster, na.rm = TRUE):max(fPeaksRes$peaks.cluster, na.rm = TRUE), function(x)
+      vapply(min(fPeaksRes$peaks.cluster, na.rm = TRUE):max(fPeaksRes$peaks.cluster, na.rm = TRUE), function(x)
         return(abs(stats::var(
           data[fPeaksRes$peaks.cluster == x, 1], data[fPeaksRes$peaks.cluster == x, 2], na.rm = TRUE
-        ))))
+        ))), double(length = 1))
     badClusters <- match(temp[temp > sum(dimensions) * 25], temp)
     fPeaksTable <- table(fPeaksRes$peaks.cluster)
     secondaryClusters <-
@@ -1481,20 +1480,20 @@ runPeaks <-
       )
     ## estimate missing clusters based on angle:
     angles <-
-      sapply(1:length(firstClusters), function(x)
+      vapply(seq_along(firstClusters), function(x)
         return(
-          atan2(clusterMeans[firstClusters[x], 1] - clusterMeans[emptyDroplets, 1], clusterMeans[firstClusters[x], 2] -
-                  clusterMeans[emptyDroplets, 2])
-        ))
+          atan2(clusterMeans[firstClusters[x], 1] - clusterMeans[emptyDroplets, 1],
+                clusterMeans[firstClusters[x], 2] - clusterMeans[emptyDroplets, 2])
+        ), double(length = 1))
     cuts <- c(0, 0.5 * pi / 4, 1.5 * pi / 4, pi / 2)
     for (i in missingClusters) {
       angles <- c(angles, cuts[i])
     }
     distMatrix <-
-      t(sapply(1:length(angles), function(x)
-        return(abs(angles[x] - cuts))))
+      t(vapply(seq_along(angles), function(x)
+        return(abs(angles[x] - cuts)), double(length = length(cuts))))
     order <- solve_LSAP(distMatrix)
-    deletions <- which(!1:4 %in% order)
+    deletions <- which(!seq_len(4) %in% order)
     deletions <- c(deletions, missingClusters)
     # deletions <- deletions[!deletions %in% missingClusters]
     # order <- order[1:nrow(firstClusters$clusters)]
@@ -1519,7 +1518,7 @@ runPeaks <-
         "Removed",
         "Total"
       )
-    names_indices <- 1:length(names)
+    names_indices <- seq_along(names)
     indices <- vector()
     for (cl in deletions) {
       indices <- c(indices, grep(cl, names))
@@ -1627,12 +1626,12 @@ runPeaks <-
         insertRow(firstClusters, cbind(0, 0), missingCluster)
     }
     finalPeaksRes <- rep(0 / 0, length(fPeaksRes$peaks.cluster))
-    for (i in 1:length(fPeaksResult)) {
+    for (i in seq_along(fPeaksResult)) {
       finalPeaksRes[which(fPeaksRes$peaks.cluster == fPeaksResult[i])] <-
         names_indices[i]
     }
     clusterCount <-
-      table(c(finalPeaksRes, 1:(length(names) - 2))) - 1
+      table(c(finalPeaksRes, seq_len(length(names) - 2))) - 1
     removed <- c(rain$removed, which(is.nan(finalPeaksRes)))
     if (length(removed) > 0) {
       finalPeaksRes[removed] <- length(names) - 1
@@ -1643,7 +1642,7 @@ runPeaks <-
     names(fPeaksCount) = names
     result <- cbind(data[, c(2, 1)], "Cluster" = finalPeaksRes)
     partition <-
-      as.cl_partition(c(finalPeaksRes, 1:(length(names) - 1)))
+      as.cl_partition(c(finalPeaksRes, seq_len(length(names) - 1)))
     return(
       list(
         data = result,
@@ -1678,7 +1677,7 @@ calculateCPDs <-
            constantControl = NULL) {
     countedResult <- list()
     maxctrl <- 0
-    for (i in 1:length(results)) {
+    for (i in seq_along(results)) {
       id <- names(results[i])
       result <- results[[i]]$counts
       if (is.null(result))
@@ -1693,7 +1692,7 @@ calculateCPDs <-
       }
       total <- as.integer(result[grep('Total', names(result))])
       empties <- as.integer(result[grep('Empties', names(result))])
-      for (j in 1:4) {
+      for (j in seq_len(4)) {
         if (is.null(template)) {
           marker <- paste0("M", j)
         } else {
@@ -1721,7 +1720,7 @@ calculateCPDs <-
     }
     # Normalize to constant control
     if (!is.null(constantControl)) {
-      for (i in 1:length(countedResult)) {
+      for (i in seq_along(countedResult)) {
         id <- names(countedResult[i])
         modFactor <-
           maxctrl / countedResult[[id]][[constantControl]]$cpd
@@ -1798,7 +1797,7 @@ createEnsemble <-
     comb_ids[comb_ids == length(names) - 1] <-
       0 / 0 ## Remove the removed ones
     superResult <-
-      cbind(file, "Cluster" = as.integer(comb_ids[1:nrow(file)]))
+      cbind(file, "Cluster" = as.integer(comb_ids[seq_len(nrow(file))]))
     return(
       list(
         data = superResult,

@@ -51,8 +51,6 @@ If all parts of the algorithm calculated the same result, the clustering is like
 The ddPCRclust algorithm can automatically quantify the events of ddPCR reaction with up to four markers.
 In order to determine the correct droplet count for each marker, it is crucial to both identify all clusters and label them correctly based on their position.
 For more information on what data can be analyzed and how a template needs to be formatted, please check the project repository on github.
-
-This is the main function of this package. It automatically runs the ddPCRclust algorithm on one or multiple csv files containing the raw data from a ddPCR run with up to 4 markers.
 }
 \section{Usage}{
 
@@ -77,7 +75,7 @@ result <- ddPCRclust(files = exampleFiles[3], template = exampleFiles[9])
 library(ggplot2)
 p <- ggplot(data = result$results$B01$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
 p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = TRUE) +
-  ggtitle("flowPeaks example")+theme_bw() + theme(legend.position="none")
+  ggtitle("B01 example")+theme_bw() + theme(legend.position="none")
 p
 
 }

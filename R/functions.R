@@ -61,8 +61,8 @@ unitLen <- function (a, b) {
 insertRow <- function(existingDF, newrow, r) {
   existingDF <- rbind(existingDF, newrow)
   existingDF <-
-    existingDF[order(c(1:(nrow(existingDF) - 1), r - 0.5)),]
-  row.names(existingDF) <- 1:nrow(existingDF)
+    existingDF[order(c(seq_len(nrow(existingDF) - 1), r - 0.5)),]
+  row.names(existingDF) <- seq_len(nrow(existingDF))
   return(existingDF)
 }
 
