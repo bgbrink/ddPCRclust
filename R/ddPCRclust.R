@@ -24,7 +24,11 @@
 #'
 #' @docType package
 #' @name ddPCRclust
-#' @import plotrix BiocStyle
+#' @import clue ggplot2 plotrix
+#' @importFrom parallel mclapply mcmapply detectCores
+#' @importFrom flowDensity deGate
+#' @importFrom SamSPECTRAL SamSPECTRAL
+#' @importFrom flowPeaks flowPeaks
 "_PACKAGE"
 #> [1] "_PACKAGE"
 
@@ -61,7 +65,6 @@
 #' }
 #' \item{template}{A parsed dataframe containing the template, if one was provided.}
 #' @export
-#' @import parallel R.utils
 #' @examples
 #' # Run ddPCRclust
 #' exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
@@ -274,7 +277,6 @@ ddPCRclust <-
 #' @param invert Invert the axis, e.g. x = Ch2.Amplitude, y = Ch1.Amplitude
 #' @return None
 #' @export
-#' @import ggplot2
 #' @examples
 #' # Run ddPCRclust
 #' exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
@@ -392,7 +394,6 @@ exportPlots <-
 #' Useful for example to visualize the clustering later on. (Warning: this can take a while!)
 #' @return None
 #' @export
-#' @import openxlsx
 #' @examples
 #' # Run ddPCRclust
 #' exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
@@ -435,7 +436,7 @@ exportToExcel <-
                  "/",
                  id,
                  "_annotated_raw.xlsx")
-        write.xlsx(result$data, file = file)
+        openxlsx::write.xlsx(result$data, file = file)
       }
     }
     mynames <-
@@ -470,7 +471,7 @@ exportToExcel <-
              "/",
              annotations[1],
              "_results.xlsx")
-    write.xlsx(
+    openxlsx::write.xlsx(
       dataToWrite,
       file = file,
       colNames = TRUE,
@@ -580,7 +581,7 @@ dens_wrapper <-
     missingClusters <- which(markerNames == "")
     result <-
       tryCatch(
-        expr = withTimeout(
+        expr = R.utils::withTimeout	(
           runDensity(
             file[, c(2, 1)],
             sensitivity,
@@ -609,7 +610,7 @@ sam_wrapper <-
     missingClusters <- which(markerNames == "")
     result <-
       tryCatch(
-        expr = withTimeout(
+        expr = R.utils::withTimeout	(
           runSam(
             file[, c(2, 1)],
             sensitivity,
@@ -638,7 +639,7 @@ peaks_wrapper <-
     missingClusters <- which(markerNames == "")
     result <-
       tryCatch(
-        expr = withTimeout(
+        expr = R.utils::withTimeout	(
           runPeaks(
             file[, c(2, 1)],
             sensitivity,
@@ -696,7 +697,6 @@ ensemble_wrapper <-
 #' \item{counts}{The droplet count for each cluster.}
 #' \item{firstClusters}{The position of the primary clusters.}
 #' \item{partition}{The cluster numbers as a CLUE partition (see clue package for more information).}
-#' @import flowDensity clue
 #' @export
 #' @examples
 #' # Run the flowDensity based approach
@@ -739,7 +739,7 @@ runDensity <-
       stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
     
-    f <- methods::new("flowFrame", exprs = as.matrix(file))
+    f <- flowCore::flowFrame(exprs = as.matrix(file))
     
     DataRemoved <- FinalResults <- NULL
     
@@ -1111,7 +1111,6 @@ runDensity <-
 #' \item{firstClusters}{The position of the primary clusters.}
 #' \item{partition}{The cluster numbers as a CLUE partition (see clue package for more information).}
 #' @export
-#' @import SamSPECTRAL flowDensity clue
 #' @examples
 #' # Run the SamSPECTRAL based approach
 #' exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
@@ -1154,7 +1153,7 @@ runSam <-
       stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
     
-    f <- methods::new("flowFrame", exprs = as.matrix(file))
+    f <- flowCore::flowFrame(exprs = as.matrix(file))
     
     #### Start of algorithm ####
     samRes <-
@@ -1396,7 +1395,6 @@ runSam <-
 #' \item{counts}{The droplet count for each cluster.}
 #' \item{firstClusters}{The position of the primary clusters.}
 #' \item{partition}{The cluster numbers as a CLUE partition (see clue package for more information).}
-#' @import flowPeaks flowDensity clue
 #' @export
 #' @examples
 #' # Run the flowPeaks based approach
@@ -1439,7 +1437,7 @@ runPeaks <-
       stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
     
-    f <- methods::new("flowFrame", exprs = as.matrix(file))
+    f <- flowCore::flowFrame(exprs = as.matrix(file))
     
     #### Start of algorithm ####
     fPeaksRes <-
@@ -1750,7 +1748,6 @@ calculateCPDs <-
 #' \item{confidence}{The agreement between the different clustering results in percent. If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.}
 #' \item{counts}{The droplet count for each cluster.}
 #' @export
-#' @import clue
 #' @examples
 #' exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
 #' file <- read.csv(exampleFiles[3])
