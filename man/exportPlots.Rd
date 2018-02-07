@@ -9,12 +9,18 @@ exportPlots(data, directory, annotations, format = "png", invert = FALSE)
 \arguments{
 \item{data}{The result of the ddPCRclust algorithm}
 
-\item{directory}{The parent directory where the files should saved. A new folder with the experiment name will be created (see below).}
+\item{directory}{The parent directory where the files should saved.
+A new folder with the experiment name will be created (see below).}
 
-\item{annotations}{Some basic metadata about the ddPCR reaction. If you provided \code{\link{ddPCRclust}} a template, this paramater can be filled with the corresponding field in the result.
-Otherwise, you have to provide a character vector containing a name and the the color channels, e.g. \code{c(Name="ddPCR_01-04-2017", Ch1="HEX", Ch2="FAM")}}
+\item{annotations}{Some basic metadata about the ddPCR reaction. 
+If you provided \code{\link{ddPCRclust}} a template, 
+this paramater can be filled with the corresponding field in the result.
+Otherwise, you have to provide a character vector containing a name and the the color channels, 
+e.g. \code{c(Name='ddPCR_01-04-2017', Ch1='HEX', Ch2='FAM')}}
 
-\item{format}{Which file format to use. Can be either be a device function (e.g. png), or one of "eps", "ps", "tex" (pictex), "pdf", "jpeg", "tiff", "png", "bmp", "svg" or "wmf" (windows only). See also \code{\link{ggsave}}}
+\item{format}{Which file format to use. Can be either be a device function (e.g. png), 
+or one of 'eps', 'ps', 'tex' (pictex), 'pdf', 'jpeg', 'tiff', 'png', 'bmp', 'svg' or 'wmf' (windows only). 
+See also \code{\link{ggsave}}}
 
 \item{invert}{Invert the axis, e.g. x = Ch2.Amplitude, y = Ch1.Amplitude}
 }
@@ -22,15 +28,21 @@ Otherwise, you have to provide a character vector containing a name and the the 
 None
 }
 \description{
-A convinience function that takes the results of the ddPCRclust algorithm and plots them using the ggplot2 library and a custom colour palette.
+A convinience function that takes the results of the ddPCRclust algorithm,
+plots them using the ggplot2 library and a custom colour palette and saves the plots to a folder.
 }
 \examples{
-# Run ddPCRclust
-exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
-result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
+# Read files
+files <- readFiles(exampleFiles[1:8])
 
-# Plot the results
-dir.create("./Results")
-exportPlots(data = result$results, directory = "./Results/", annotations = result$annotations)
+# Read template
+template <- readTemplate(exampleFiles[9])
+
+# Run ddPCRclust
+result <- ddPCRclust(files, template)
+
+# Export the plots
+dir.create('./Results')
+exportPlots(data = result, directory = './Results/', annotations = result$annotations)
 
 }

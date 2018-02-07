@@ -13,18 +13,21 @@ createEnsemble(dens = NULL, sam = NULL, peaks = NULL, file)
 
 \item{peaks}{The result of the flowPeaks algorithm as a CLUE partition.}
 
-\item{file}{The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color.}
+\item{file}{The input data. More specifically, a data frame with two dimensions, 
+each dimension representing the intensity for one color.}
 }
 \value{
 \item{data}{The original input data minus the removed events (for plotting)}
-\item{confidence}{The agreement between the different clustering results in percent. If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.}
+\item{confidence}{The agreement between the different clustering results in percent. 
+If all algorithms calculated the same result, the clustering is likely to be correct, thus the confidence is high.}
 \item{counts}{The droplet count for each cluster.}
 }
 \description{
-This function takes the three (or less) clustering approaches of the ddPCRclust package and combines them to one cluster ensemble. See \link{cl_medoid} for more information.
+This function takes the three (or less) clustering approaches of the ddPCRclust package 
+and combines them to one cluster ensemble. See \link{cl_medoid} for more information.
 }
 \examples{
-exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
+exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 file <- read.csv(exampleFiles[3])
 densResult <- runDensity(file = file, numOfMarkers = 4)
 samResult <- runSam(file = file, numOfMarkers = 4)

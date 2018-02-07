@@ -11,20 +11,28 @@ calculateCPDs(results, template = NULL, constantControl = NULL)
 
 \item{template}{The parsed dataframe containing the template.}
 
-\item{constantControl}{The constant refrence control, which should be present in each reaction. It is used to normalize the data.}
+\item{constantControl}{The constant refrence control, which should be present in each reaction. 
+It is used to normalize the data.}
 }
 \value{
-A list of lists, containing the counts for empty droplets, each marker with both total droplet count and CPD, and total number of droplets, for each element of the input list respectively.
+A list of lists, containing the counts for empty droplets, each marker with both total droplet count and CPD, 
+and total number of droplets, for each element of the input list respectively.
 }
 \description{
-This function takes the results of the clustering and calculates the actual counts per target, as well as the counts per droplet (CPD) for each marker.
+This function takes the results of the clustering and calculates the actual counts per target, 
+as well as the counts per droplet (CPD) for each marker.
 }
 \examples{
+# Read files
+files <- readFiles(exampleFiles[1:8])
+
+# Read template
+template <- readTemplate(exampleFiles[9])
+
 # Run ddPCRclust
-exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
-result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
+result <- ddPCRclust(files, template)
 
 # Calculate the CPDs
-markerCPDs <- calculateCPDs(result$results, result$template)
+markerCPDs <- calculateCPDs(result, result$template)
 
 }

@@ -9,56 +9,64 @@
 \title{ddPCRclust
 A package for automated quantification of multiplexed ddPCR data}
 \usage{
-ddPCRclust(files, numOfMarkers = 4, sensitivity = 1,
-  similarityParam = 0.95, distanceParam = 0.2, template = NULL,
-  fast = FALSE, multithread = FALSE)
+ddPCRclust(files, template, numOfMarkers = 4, sensitivity = 1,
+  similarityParam = 0.95, distanceParam = 0.2, fast = FALSE,
+  multithread = FALSE)
 }
 \arguments{
-\item{files}{The input file(s), specifically csv files. Each file represents a two-dimensional data frame.
-Each row within the data frame represents a single droplet, each column the respective intensities per colour channel.}
+\item{files}{The input data obtained from the csv files. For more information, please see \code{\link{readFiles}}.}
 
-\item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up. Can be ignored if a template is provided.
-Else, a vector with length equal to \code{length(files)} should be provided, containing the number of markers used for the respective reaction.}
+\item{template}{A data frame containing information about the individual ddPCR runs. 
+An example template is provided with this package. For more information, please see \code{\link{readTemplate}}.}
 
-\item{sensitivity}{A number between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
+\item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up. 
+Can be ignored if a template is provided. Else, a vector with length equal to \code{length(files)} should be provided, 
+containing the number of markers used for the respective reaction.}
 
-\item{similarityParam}{If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.}
+\item{sensitivity}{A number between 0.1 and 2 determining sensitivity of the initial clustering, 
+e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
 
-\item{distanceParam}{When assigning rain between to clusters, typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. This parameter changes the ratio.}
+\item{similarityParam}{If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. 
+The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, 
+where 0 means none of the 'rain' droplets will be counted and 1 means all droplets will be counted.}
 
-\item{template}{A csv file containing information about the individual ddPCR runs. An example template is provided with this package. For more information, please check the repository on github.}
+\item{distanceParam}{When assigning rain between to clusters, typically the bottom 20\% are assigned to the lower cluster 
+and remaining 80\% to the higher cluster. This parameter changes the ratio.}
 
-\item{fast}{Run a simpler version of the algorithm that is about 10x faster. For clean data, this can already deliver very good results. In any case useful to get a quick overview over the data.}
+\item{fast}{Run a simpler version of the algorithm that is about 10x faster. For clean data, 
+this can already deliver very good results. In any case useful to get a quick overview over the data.}
 
 \item{multithread}{Distribute the algorithm amongst all CPU cores to speed up the computation.}
 }
 \value{
 \item{results}{The results of the ddPCRclust algorithm. It contains three fields: \cr
-\code{data} The original input data minus the removed events (for plotting)
+\code{data} The original input data minus the removed events (for plotting) \cr
 \code{confidence} The agreement between the different clustering results in percent
 If all parts of the algorithm calculated the same result, the clustering is likely to be correct, thus the confidence is high\cr
 \code{counts} The droplet count for each cluster
 }
-\item{annotations}{The metatdata provided in the header of the template. It contains four fields: \cr
-\code{Name} The name given to this ddPCR experiment \cr
-\code{Ch1} Color channel 1 (usually HEX) \cr
-\code{Ch2} Color channel 2 (usually FAM) \cr
-\code{descriptions} Additional descriptions about this ddPCR experiment (e.g. date, exprimentor, etc.)
-}
-\item{template}{A parsed dataframe containing the template, if one was provided.}
 }
 \description{
 The ddPCRclust algorithm can automatically quantify the events of ddPCR reaction with up to four markers.
-In order to determine the correct droplet count for each marker, it is crucial to both identify all clusters and label them correctly based on their position.
-For more information on what data can be analyzed and how a template needs to be formatted, please check the project repository on github.
+In order to determine the correct droplet count for each marker, 
+it is crucial to both identify all clusters and label them correctly based on their position.
+For more information on what data can be analyzed and how a template needs to be formatted, 
+please check the project repository on github.
+
+This is the main function of this package. 
+It automatically runs the ddPCRclust algorithm on one or multiple csv files 
+containing the raw data from a ddPCR run with up to 4 markers.
 }
 \section{Usage}{
 
-The main function of the package is \code{\link{ddPCRclust}}. This function runs the algorithm with one or multiple files, automatically distributing them amongst all cpu cores using the \link[parallel]{parallel} package (parallelization does not work on windows).
-Afterwards, the results can be exported in different ways, using \code{\link{exportPlots}}, \code{\link{exportToExcel}} and \code{\link{exportToCSV}}.
+The main function of the package is \code{\link{ddPCRclust}}. This function runs the algorithm with one or multiple files, 
+automatically distributing them amongst all cpu cores using the \link[parallel]{parallel} package 
+(parallelization does not work on windows). Afterwards, the results can be exported in different ways, 
+using \code{\link{exportPlots}}, \code{\link{exportToExcel}} and \code{\link{exportToCSV}}.
 Once the clustering is finished, copies per droplet (CPD) for each marker can be calculated using \code{\link{calculateCPDs}}.
 
-These functions provide access to all functionalities of the ddPCRclust package. However, expert users can directly call some internal functions of the algorithm, if they find it necessary.
+These functions provide access to all functionalities of the ddPCRclust package. 
+However, expert users can directly call some internal functions of the algorithm, if they find it necessary.
 Here is a list of all available supplemental functions: \cr
 \code{\link{runDensity}} \cr
 \code{\link{runSam}} \cr
@@ -67,15 +75,20 @@ Here is a list of all available supplemental functions: \cr
 }
 
 \examples{
+# Read files
+files <- readFiles(exampleFiles[1:8])
+
+# Read template
+template <- readTemplate(exampleFiles[9])
+
 # Run ddPCRclust
-exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
-result <- ddPCRclust(files = exampleFiles[3], template = exampleFiles[9])
+result <- ddPCRclust(files, template)
 
 # Plot the results
 library(ggplot2)
-p <- ggplot(data = result$results$B01$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+p <- ggplot(data = result$B01$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
 p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = TRUE) +
-  ggtitle("B01 example")+theme_bw() + theme(legend.position="none")
+  ggtitle('B01 example')+theme_bw() + theme(legend.position='none')
 p
 
 }
@@ -83,6 +96,7 @@ p
 Useful links:
 \itemize{
   \item \url{https://github.com/bgbrink/ddPCRclust}
+  \item Report bugs at \url{https://github.com/bgbrink/ddPCRclust/issues}
 }
 
 }

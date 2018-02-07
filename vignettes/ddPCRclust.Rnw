@@ -46,6 +46,11 @@ source("https://bioconductor.org/biocLite.R")
 biocLite("ddPCRclust")
 @
 
+\section{Input data}
+The input data are one or multiple CSV files containing the raw data from Bio-Rad's droplet digital PCR systems (QX100 and QX200). Each file can be represented as a two-dimensional data frame. Each row within the data frame represents a single droplet, each column the respective intensities per colour channel. Load from from your file system with \Rfunction{readFiles}.
+
+You can also set up a run template to tell ddPCRclust which and how many markers were used in each experiment.
+
 \section{Methods}
 As aforementioned, data from ddPCR consists of a number of different clusters $l_1, \dots, l_k$ and their respective centroids $c_1, \dots, c_k$, where $k$ is the number of clusters. All droplets ($x_1, \dots, x_m$) represent one or more genetic targets $t_1, \dots, t_n$, where $m$ is the number of droplets and $n$ is the number of targets. Each cluster $l_i$ is defined as a group of droplets that contain an identical combination of targets. We define four steps to successfully analyze this data:
 
@@ -57,7 +62,11 @@ As aforementioned, data from ddPCR consists of a number of different clusters $l
 \end{enumerate}
 
 \section{Usage}
-The main function of the package is \Rfunction{ddPCRclust}. This function runs the algorithm with one or multiple files, automatically distributing them among all CPU cores (no parallelisation on Windows). We provide eight exemplary ddPCR files along with this package. Analyse them using the following commands.
+The main function of the package is \Rfunction{ddPCRclust}. 
+This function runs the algorithm with one or multiple files, 
+automatically distributing them among all CPU cores (no parallelisation on Windows). 
+We provide eight exemplary ddPCR files along with this package. 
+Analyse them using the following commands.
 
 <<results=hide>>=
 # Run ddPCRclust
@@ -73,11 +82,10 @@ p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = TRUE) +
 p
 @
 
-\subsection{Input data:}
-The input data are one or multiple CSV files containing the raw data from Bio-Rad's droplet digital PCR systems (QX100 and QX200). Each file can be represented as a two-dimensional data frame. Each row within the data frame represents a single droplet, each column the respective intensities per colour channel.
-
 \subsection{Clustering:}
-The initial clustering to find the centroids is based on three different approaches; flowDensity \cite{malek2015flowdensity}, SamSPECTRAL \cite{zare2010data}, and flowPeaks \cite{ge2012flowpeaks}. Each approach has its own function within ddPCRclust, provided users need more granular control.
+The initial clustering to find the centroids is based on three different approaches; 
+flowDensity \cite{malek2015flowdensity}, SamSPECTRAL \cite{zare2010data}, and flowPeaks \cite{ge2012flowpeaks}. 
+Each approach has its own function within ddPCRclust, provided users need more granular control.
 
 \subsubsection{flowDensity}
 Originally designed for gating of flow cytometry data, \emph{flowDensity} identifies cell populations in a dataset using characteristics of the density distribution (e.g. the number, height and width of peaks and the slope of the distribution curve). Parameters can be adjusted on a population-specific basis. We use the density function to find local peaks above a threshold, which represent the centres of clusters. The method comprises the following steps:

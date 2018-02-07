@@ -8,17 +8,25 @@ runPeaks(file, sensitivity = 1, numOfMarkers, missingClusters = NULL,
   similarityParam = 0.95, distanceParam = 0.2)
 }
 \arguments{
-\item{file}{The input data. More specifically, a data frame with two dimensions, each dimension representing the intensity for one color channel.}
+\item{file}{The input data. More specifically, a data frame with two dimensions, 
+each dimension representing the intensity for one color channel.}
 
-\item{sensitivity}{A number between 0.1 and 2 determining sensitivity of the initial clustering, e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
+\item{sensitivity}{A number between 0.1 and 2 determining sensitivity of the initial clustering, 
+e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.}
 
 \item{numOfMarkers}{The number of primary clusters that are expected according the experiment set up.}
 
-\item{missingClusters}{A vector containing the number of primary clusters, which are missing in this dataset according to the template.}
+\item{missingClusters}{A vector containing the number of primary clusters, 
+which are missing in this dataset according to the template.}
 
-\item{similarityParam}{If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, where 0 means none of the "rain" droplets will be counted and 1 means all droplets will be counted.}
+\item{similarityParam}{If the distance of a droplet between two or more clusters is very similar, 
+it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. 
+A sensible value lies between 0 and 1, where 0 means none of the 'rain' droplets will be counted 
+and 1 means all droplets will be counted.}
 
-\item{distanceParam}{When assigning rain between to clusters, typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. This parameter changes the ratio.}
+\item{distanceParam}{When assigning rain between to clusters, 
+typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. 
+This parameter changes the ratio.}
 }
 \value{
 \item{data}{The original input data minus the removed events (for plotting)}
@@ -31,7 +39,7 @@ Find the rain and assign it based on the distance to vector lines connecting the
 }
 \examples{
 # Run the flowPeaks based approach
-exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
+exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 file <- read.csv(exampleFiles[3])
 peaksResult <- runPeaks(file = file, numOfMarkers = 4)
 
@@ -39,7 +47,7 @@ peaksResult <- runPeaks(file = file, numOfMarkers = 4)
 library(ggplot2)
 p <- ggplot(data = peaksResult$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
 p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = TRUE) +
-     ggtitle("flowPeaks example")+theme_bw() + theme(legend.position="none")
+     ggtitle('flowPeaks example')+theme_bw() + theme(legend.position='none')
 p
 
 }

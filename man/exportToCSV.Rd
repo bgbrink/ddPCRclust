@@ -9,12 +9,18 @@ exportToCSV(data, directory, annotations, raw = FALSE)
 \arguments{
 \item{data}{The result of the ddPCRclust algorithm}
 
-\item{directory}{The parent directory where the files should saved. A new folder with the experiment name will be created (see below).}
+\item{directory}{The parent directory where the files should saved. 
+A new folder with the experiment name will be created (see below).}
 
-\item{annotations}{Some basic metadata about the ddPCR reaction. If you provided \code{\link{ddPCRclust}} a template, this paramater can be filled with the corresponding field in the result.
-Otherwise, you have to provide a character vector containing a name and the the color channels, e.g. \code{c(Name="ddPCR_01-04-2017", Ch1="HEX", Ch2="FAM")}}
+\item{annotations}{Some basic metadata about the ddPCR reaction. 
+If you provided \code{\link{ddPCRclust}} a template, 
+this paramater can be filled with the corresponding field in the result.
+Otherwise, you have to provide a character vector containing a name and the the color channels, 
+e.g. \code{c(Name='ddPCR_01-04-2017', Ch1='HEX', Ch2='FAM')}}
 
-\item{raw}{Boolean which determines if the annotated raw data should be exported along with the final counts. Basically, a third column will be added to the original data, which contains the cluster number to which this point was assigned to.
+\item{raw}{Boolean which determines if the annotated raw data should be exported along with the final counts. 
+Basically, a third column will be added to the original data, 
+which contains the cluster number to which this point was assigned to.
 Useful for example to visualize the clustering later on. (Warning: this can take a while!)}
 }
 \value{
@@ -24,12 +30,17 @@ None
 A convinience function that takes the results of the droplClust algorithm and exports them to a csv file.
 }
 \examples{
+# Read files
+files <- readFiles(exampleFiles[1:8])
+
+# Read template
+template <- readTemplate(exampleFiles[9])
+
 # Run ddPCRclust
-exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
-result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
+result <- ddPCRclust(files, template)
 
 # Export the results
-dir.create("./Results")
-exportToCSV(data = result$results, directory = "./Results/", annotations = result$annotations)
+dir.create('./Results')
+exportToCSV(data = result, directory = './Results/', annotations = result$annotations)
 
 }
