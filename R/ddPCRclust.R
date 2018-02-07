@@ -124,14 +124,15 @@ readTemplate <- function(template) {
 #' Can be ignored if a template is provided. Else, a vector with length equal to \code{length(files)} should be provided, 
 #' containing the number of markers used for the respective reaction.
 #' @param sensitivity A number between 0.1 and 2 determining sensitivity of the initial clustering, 
-#' e.g. the number of clusters. A higher value means more clusters are being found. Standard is 1.
+#' e.g. the number of clusters. A higher value means the data is divided into more clusters, 
+#' a lower value means more clusters are merged. This allows fine tuning of the algorithm for exceptionally low or high CPDs.
 #' @param similarityParam If the distance of a droplet between two or more clusters is very similar, it will not be counted for either. 
 #' The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, 
 #' where 0 means none of the 'rain' droplets will be counted and 1 means all droplets will be counted.
-#' @param distanceParam When assigning rain between to clusters, typically the bottom 20\% are assigned to the lower cluster 
-#' and remaining 80\% to the higher cluster. This parameter changes the ratio.
-#' @param fast Run a simpler version of the algorithm that is about 10x faster. For clean data, 
-#' this can already deliver very good results. In any case useful to get a quick overview over the data.
+#' @param distanceParam When assigning rain between two clusters, typically the bottom 20\% are assigned to the lower cluster and 
+#' the remaining 80\% to the higher cluster. This parameter changes the ratio, i.e. a value of 0.1 would assign only 10\% to the lower cluster.
+#' @param fast Run a simpler version of the algorithm that is about 10x faster. For clean data, this might already deliver very good results. 
+#' However, is is mostly intended to get a quick overview over the data.
 #' @param multithread Distribute the algorithm amongst all CPU cores to speed up the computation.
 #' @return
 #' \item{results}{The results of the ddPCRclust algorithm. It contains three fields: \cr
@@ -498,9 +499,8 @@ ensemble_wrapper <- function(dens_result, sam_result, peaks_result, file) {
 #' it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. 
 #' A sensible value lies between 0 and 1, where 0 means none of the 'rain' droplets will be counted and 
 #' 1 means all droplets will be counted.
-#' @param distanceParam When assigning rain between to clusters, 
-#' typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. 
-#' This parameter changes the ratio.
+#' @param distanceParam When assigning rain between two clusters, typically the bottom 20\% are assigned to the lower cluster and 
+#' the remaining 80\% to the higher cluster. This parameter changes the ratio, i.e. a value of 0.1 would assign only 10\% to the lower cluster.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -785,9 +785,8 @@ runDensity <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NU
 #' it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. 
 #' A sensible value lies between 0 and 1, where 0 means none of the 'rain' droplets will be counted and 
 #' 1 means all droplets will be counted.
-#' @param distanceParam When assigning rain between to clusters, 
-#' typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. 
-#' This parameter changes the ratio.
+#' @param distanceParam When assigning rain between two clusters, typically the bottom 20\% are assigned to the lower cluster and 
+#' the remaining 80\% to the higher cluster. This parameter changes the ratio, i.e. a value of 0.1 would assign only 10\% to the lower cluster.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -951,9 +950,8 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL, 
 #' it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. 
 #' A sensible value lies between 0 and 1, where 0 means none of the 'rain' droplets will be counted 
 #' and 1 means all droplets will be counted.
-#' @param distanceParam When assigning rain between to clusters, 
-#' typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. 
-#' This parameter changes the ratio.
+#' @param distanceParam When assigning rain between two clusters, typically the bottom 20\% are assigned to the lower cluster and 
+#' the remaining 80\% to the higher cluster. This parameter changes the ratio, i.e. a value of 0.1 would assign only 10\% to the lower cluster.
 #' @return
 #' \item{data}{The original input data minus the removed events (for plotting)}
 #' \item{counts}{The droplet count for each cluster.}
@@ -1113,7 +1111,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
 #' result <- ddPCRclust(files, template)
 #'
 #' # Calculate the CPDs
-#' markerCPDs <- calculateCPDs(result, result$template)
+#' markerCPDs <- calculateCPDs(result, template$template)
 #'
 calculateCPDs <- function(results, template = NULL, constantControl = NULL) {
     countedResult <- list()
