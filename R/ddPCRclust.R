@@ -52,6 +52,7 @@
 #' @export
 #' @examples
 #' # Read files
+#' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 #' files <- readFiles(exampleFiles[1:8])
 #'
 readFiles <- function(files) {
@@ -80,6 +81,7 @@ readFiles <- function(files) {
 #' @export
 #' @examples
 #' # Read template
+#' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 #' template <- readTemplate(exampleFiles[9])
 #'
 readTemplate <- function(template) {
@@ -144,6 +146,7 @@ readTemplate <- function(template) {
 #' @export
 #' @examples
 #' # Read files
+#' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 #' files <- readFiles(exampleFiles[1:8])
 #' 
 #' # Read template
@@ -244,8 +247,10 @@ ddPCRclust <- function(files, template, numOfMarkers = 4, sensitivity = 1, simil
 #' See also \code{\link{ggsave}}
 #' @param invert Invert the axis, e.g. x = Ch2.Amplitude, y = Ch1.Amplitude
 #' @return None
+#' @export
 #' @examples
 #' # Read files
+#' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 #' files <- readFiles(exampleFiles[1:8])
 #' 
 #' # Read template
@@ -319,8 +324,10 @@ exportPlots <- function(data, directory, annotations, format = "png", invert = F
 #' which contains the cluster number to which this point was assigned to.
 #' Useful for example to visualize the clustering later on. (Warning: this can take a while!)
 #' @return None
+#' @export
 #' @examples
 #' # Read files
+#' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 #' files <- readFiles(exampleFiles[1:8])
 #' 
 #' # Read template
@@ -387,8 +394,10 @@ exportToExcel <- function(data, directory, annotations, raw = FALSE) {
 #' which contains the cluster number to which this point was assigned to.
 #' Useful for example to visualize the clustering later on. (Warning: this can take a while!)
 #' @return None
+#' @export
 #' @examples
 #' # Read files
+#' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 #' files <- readFiles(exampleFiles[1:8])
 #' 
 #' # Read template
@@ -1102,6 +1111,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
 #' @export
 #' @examples
 #' # Read files
+#' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 #' files <- readFiles(exampleFiles[1:8])
 #' 
 #' # Read template

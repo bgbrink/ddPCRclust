@@ -24,6 +24,7 @@ as well as the counts per droplet (CPD) for each marker.
 }
 \examples{
 # Read files
+exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 files <- readFiles(exampleFiles[1:8])
 
 # Read template
@@ -33,6 +34,6 @@ template <- readTemplate(exampleFiles[9])
 result <- ddPCRclust(files, template)
 
 # Calculate the CPDs
-markerCPDs <- calculateCPDs(result, result$template)
+markerCPDs <- calculateCPDs(result, template$template)
 
 }

@@ -20,6 +20,7 @@ Please refer to the vignette for more information on how these files need to be 
 }
 \examples{
 # Read files
+exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 files <- readFiles(exampleFiles[1:8])
 
 }

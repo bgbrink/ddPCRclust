@@ -24,9 +24,8 @@ it will not be counted for either. The standard it 0.95, i.e. at least 95\% simi
 A sensible value lies between 0 and 1, where 0 means none of the 'rain' droplets will be counted 
 and 1 means all droplets will be counted.}
 
-\item{distanceParam}{When assigning rain between to clusters, 
-typically the bottom 20\% are assigned to the lower cluster and remaining 80\% to the higher cluster. 
-This parameter changes the ratio.}
+\item{distanceParam}{When assigning rain between two clusters, typically the bottom 20\% are assigned to the lower cluster and 
+the remaining 80\% to the higher cluster. This parameter changes the ratio, i.e. a value of 0.1 would assign only 10\% to the lower cluster.}
 }
 \value{
 \item{data}{The original input data minus the removed events (for plotting)}

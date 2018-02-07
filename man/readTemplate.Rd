@@ -24,6 +24,7 @@ Please refer to the vignette for information on how this file need to be formatt
 }
 \examples{
 # Read template
+exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 template <- readTemplate(exampleFiles[9])
 
 }

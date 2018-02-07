@@ -26,45 +26,30 @@ BiocStyle::latex()
 
 \section{Introduction}
 
-Droplet digital PCR (ddPCR) is an emerging technology for quantifying DNA. By partitioning the target DNA into $\sim\,$20$\,$000 droplets, 
-each serving as its own PCR reaction compartment, ddPCR has significantly increased sensitivity compared to other technologies for DNA quantification.
-However, manual analysis of the data is time consuming and algorithms for automated analysis of non-orthogonal, multiplexed ddPCR data are unavailable,
-presenting a major bottleneck for the advancement of ddPCR transitioning from low-throughput to high-throughput. During a ddPCR run, 
-each genetic target is fluorescently labelled with a combination of two fluorophores (typically HEX and FAM), giving it a unique footprint in a 
-two-dimensional space represented by the intensities per colour channel. The position of each droplet within this space reveals how many and, 
-more importantly, which genetic targets it contains. Thus, droplets that contain the same targets cluster together. The number of positive droplets 
+Droplet digital PCR (ddPCR) is an emerging technology for quantifying DNA. By partitioning the target DNA into 
+$\sim\,$20$\,$000 droplets, each serving as its own PCR reaction compartment, ddPCR has significantly increased 
+sensitivity compared to other technologies for DNA quantification.However, manual analysis of the data is time 
+consuming and algorithms for automated analysis of non-orthogonal, multiplexed ddPCR data are unavailable,
+presenting a major bottleneck for the advancement of ddPCR transitioning from low-throughput to high-throughput. 
+During a ddPCR run, each genetic target is fluorescently labelled with a combination of two fluorophores 
+(typically HEX and FAM), giving it a unique footprint in a two-dimensional space represented by the intensities per 
+colour channel. The position of each droplet within this space reveals how many and, more importantly, which genetic 
+targets it contains. Thus, droplets that contain the same targets cluster together. The number of positive droplets 
 for each target determine its abundance.
 
-ddPCRclust is an R package for automated analysis of multiplexed ddPCR data. It can automatically analyse and visualise multiplexed ddPCR experiments 
-with up to four targets per reaction. Results are on par with manual analysis, but only take minutes to compute instead of hours. The accompanying 
-Shiny app ddPCRvis provides easy access to the functionalities of ddPCRclust through a web-browser based GUI.
-
-\section{Installation}
-The algorithm was implemented in R and can be installed as a package. You can install this package like any other package from GitHub using devtools:
-
-<<eval=FALSE>>=
-library(devtools)
-install_github("bgbrink/ddPCRclust")
-@
-
-Or directly from Bioconductor:
-
-<<eval=FALSE>>=
-## try http:// if https:// URLs are not supported
-source("https://bioconductor.org/biocLite.R")
-biocLite("ddPCRclust")
-@
+ddPCRclust is an R package for automated analysis of multiplexed ddPCR data. It can automatically analyse and visualise
+multiplexed ddPCR experiments with up to four targets per reaction. Results are on par with manual analysis, but only take
+minutes to compute instead of hours. The accompanying Shiny app ddPCRvis provides easy access to the functionalities of
+ddPCRclust through a web-browser based GUI.
 
 \section{Input data}\label{input}
-The input data are one or multiple CSV files containing the raw data from Bio-Rad's droplet digital PCR systems (QX100 and QX200). 
-Each file can be represented as a two-dimensional data frame. 
+The input data are one or multiple CSV files containing the raw data from Bio-Rad's droplet digital PCR systems 
+(QX100 and QX200). Each file can be represented as a two-dimensional data frame. 
 Each row within the data frame represents a single droplet, each column the respective intensities per colour channel. 
 Load from from your file system with \Rfunction{readFiles}.
 
 \begin{table}[]
 \centering
-\caption{My caption}
-\label{my-label}
 \begin{tabular}{ll}
 Ch1 Amplitude & Ch2 Amplitude \\
 2360.098      & 6119.26953    \\
@@ -81,8 +66,6 @@ You can also set up a run template to tell ddPCRclust which and how many markers
 
 \begin{table}[]
 \centering
-\caption{My caption}
-\label{my-label}
 \begin{tabular}{lllllll}
 Well & Sample type & No of markers & Marker 1 & Marker 2 & Marker 3 & Marker 4 \\
 B01  & Blood       & 4             & a        & b        & c        & d        \\
@@ -119,7 +102,9 @@ We provide eight exemplary ddPCR files along with this package.
 Analyse them using the following commands.
 
 <<results=hide>>=
+library(ddPCRclust)
 # Read files
+exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
 files <- readFiles(exampleFiles[1:8])
 
 # Read template
@@ -139,55 +124,72 @@ p
 \subsubsection{Parameters}\label{params}
 \begin{itemize}
 \item{files} The input data obtained from the csv files. For more information, please see \ref{input}.
-\item{template} A data frame containing information about the individual ddPCR runs. For more information, please see \ref{input}.
+\item{template} A data frame containing information about the individual ddPCR runs. For more information, 
+please see \ref{input}.
 \item{numOfMarkers} The number of primary clusters that are expected according the experiment set up. 
-Can be ignored if a template is provided. Else, a vector with length equal to \code{length(files)} should be provided, 
+Can be ignored if a template is provided. Else, a vector with length equal to \texttt{length(files)} should be provided, 
 containing the number of markers used for the respective reaction.
 \item{sensitivity} The clustering algorithms can be tweaked in order to partition the data into more or less clusters. 
 A sensible value lies between 0.1 and 2, the standard is 1. A higher value means the data is divided into more clusters, 
 a lower value means more clusters are merged. This allows fine tuning of the algorithm for exceptionally low or high CPDs.
-\item{similarityParam} If the distance of a droplet between two or more clusters is very similar, the algorithm can't be sure where it belongs, 
-so it will not be counted for either. The standard it 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, 
+\item{similarityParam} If the distance of a droplet between two or more clusters is very similar, 
+the algorithm can't be sure where it belongs, so it will not be counted for either. 
+The standard is 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, 
 where 0 means none of the 'rain' droplets will be counted and 1 means all droplets will be counted.
 \item{distanceParam} When assigning rain between two clusters, typically the bottom 20\% are assigned to the lower cluster 
-and the remaining 80\% to the higher cluster. This parameter changes the ratio, i.e. a value of 0.1 would assign only 10\% to the lower cluster.
-\item{fast} Run a simpler version of the algorithm that uses only flowDensity (see \ref{dens}) and hence is about 10x faster. 
-For clean data, this might already deliver very good results. However, is is mostly intended to get a quick overview over the data.
+and the remaining 80\% to the higher cluster. This parameter changes the ratio, 
+i.e. a value of 0.1 would assign only 10\% to the lower cluster.
+\item{fast} Run a simpler version of the algorithm that uses only flowDensity (see \ref{dens}) and thus is about 10x faster.
+For clean data, this might already deliver very good results. However, is is mostly intended to get a quick overview 
+over the data.
 \item{multithread} Distribute the algorithm amongst all CPU cores to speed up the computation (not available on Windows).
 \end{itemize}
 
 \subsection{flowDensity}\label{dens}
-Originally designed for gating of flow cytometry data, \emph{flowDensity} identifies cell populations in a dataset using characteristics of the 
-density distribution (e.g. the number, height and width of peaks and the slope of the distribution curve). Parameters can be adjusted on a 
-population-specific basis. We use the density function to find local peaks above a threshold, which represent the centres of clusters. 
+Originally designed for gating of flow cytometry data, \emph{flowDensity} identifies cell populations in a dataset 
+using characteristics of the density distribution (e.g. the number, height and width of peaks and the slope of the 
+distribution curve). Parameters can be adjusted on a population-specific basis. We use the density function to find 
+local peaks above a threshold, which represent the centres of clusters. 
 The method comprises the following steps:
 \begin{enumerate}
-\item Remove all $x$ where $(x_1,x_2)$ < 0.125$\,\cdot\,max(x_1,x_2)$. The bottom 12.5$\,\%$ of the data space is known to contain the 
-negative population, i.e. the droplets without any of the targets of interest.
-\item Find the highest density peaks with $max(x_1)$ and $max(x_2)$, respectively. We define these as the two outer primary clusters $y$ and $z$, 
-since the primary clusters empirically contain the majority of the non-negative events.
+\item Remove all $x$ where $(x_1,x_2)$ < 0.125$\,\cdot\,max(x_1,x_2)$. The bottom 12.5$\,\%$ of the data space is 
+known to contain the negative population, i.e. the droplets without any of the targets of interest.
+\item Find the highest density peaks with $max(x_1)$ and $max(x_2)$, respectively. We define these as the two outer 
+primary clusters $y$ and $z$, since the primary clusters empirically contain the majority of the non-negative events.
 \item Rotate the data with $\theta = \lvert atan(\frac{y_2 - z_2}{y_1 - z_1}) \rvert$.
 \item Cut the rotated data above the two outer clusters in a staircase manner and find all density peaks.
 \item Take the previously removed data and repeat steps 2 and 4, until all clusters are found.
 \end{enumerate}
 Clusters are then labelled based on their rotated position and lastly the rain is assigned.
 
-This part of the algorithm can be accessed with the function \Rfunction{runDensity}. The parameters are the same as discussed in \ref{params}.
+This part of the algorithm can be accessed with the function \Rfunction{runDensity}. 
+The parameters are the same as discussed in \ref{params}.
 
 \subsubsection{SamSPECTRAL}
-Since spectral clustering is computationally expensive ($\mathcal{O}(n^3)$ time and $\mathcal{O}(n^2)$ space), \emph{SamSPECTRAL} uses density based pre-processing to reduce the number of edges in the graph. To do so, a faithful sampling algorithm builds $m$ communities, which are then connected to a graph where the edges represent the similarity between corresponding communities. The spectrum of this graph is subsequently analysed using classical spectral clustering to find the clusters. Finally, the clusters are combined based on their similarity in the community graph and a cluster number for each event in the original data is returned. We use this implementation of spectral clustering and choose $m$ encompassing 5$\,$\% of the data, which has empirically proven to be a good compromise between accuracy and speed. However, users can choose a different value if necessary.
+Since spectral clustering is computationally expensive ($\mathcal{O}(n^3)$ time and $\mathcal{O}(n^2)$ space), 
+\emph{SamSPECTRAL} uses density based pre-processing to reduce the number of edges in the graph. To do so, a faithful
+sampling algorithm builds $m$ communities, which are then connected to a graph where the edges represent the similarity
+between corresponding communities. The spectrum of this graph is subsequently analysed using classical spectral clustering
+to find the clusters. Finally, the clusters are combined based on their similarity in the community graph and a cluster
+number for each event in the original data is returned. We use this implementation of spectral clustering and choose $m$
+encompassing 5$\,$\% of the data, which has empirically proven to be a good compromise between accuracy and speed. However,
+users can choose a different value if necessary.
 Clusters are then labelled based on their position and lastly the rain is assigned.
 
-This part of the algorithm can be accessed with the function \Rfunction{runSam}. The parameters are the same as discussed in \ref{params}.
+This part of the algorithm can be accessed with the function \Rfunction{runSam}. 
+The parameters are the same as discussed in \ref{params}.
 
 
 \subsubsection{flowPeaks}
-The third approach uses the \emph{flowPeaks} package \cite{ge2012flowpeaks}. The \emph{flowPeaks} algorithm first uses a two step k-means clustering with a large k, in order to partition the dataset into many compact clusters.
+The third approach uses the \emph{flowPeaks} package \cite{ge2012flowpeaks}. The \emph{flowPeaks} algorithm first uses a 
+two step k-means clustering with a large k, in order to partition the dataset into many compact clusters.
 The result is then used to generate a smoothed density function.
-All local peaks are exhaustively found by exploring the density function and the clusters are merged according to their local peaks.
+All local peaks are exhaustively found by exploring the density function and the clusters are merged according to their
+local peaks.
 Clusters are then labelled based on their position and lastly the rain is assigned.
 
-This part of the algorithm can be accessed with the function \Rfunction{runPeaks}. The parameters are the same as discussed in \ref{params}.
+This part of the algorithm can be accessed with the function \Rfunction{runPeaks}. 
+The parameters are the same as discussed in \ref{params}.
 
 
 \subsection{Copies per droplet:}
@@ -198,20 +200,23 @@ CPD_i = -ln(1-\frac{C_i}{C_T})
 \end{equation}
 where $C_i$ is the total number of positive droplets for target $i$ and $C_T$ the total droplet count.
 
-\subsubsection{Parameters}\label{params}
+\subsubsection{Parameters}
 \begin{itemize}
 \item{results} The result of the ddPCRclust algorithm. 
-\item{template} A data frame containing information about the individual ddPCR runs. For more information, please see \ref{input}.
-\item{constantControl} The name of a marker that has been used a constant control. This marker has to be present in \emph{every} row of 
-the provided template. The results will be normalized against this control.
+\item{template} A data frame containing information about the individual ddPCR runs. For more information, 
+please see \ref{input}.
+\item{constantControl} The name of a marker that has been used a constant control. This marker has to be present in
+\emph{every} row of the provided template. The results will be normalized against this control.
 \end{itemize}
 
 \subsection{Exporting results:}
 The results can be exported using \Rfunction{exportPlots}, \Rfunction{exportToExcel}, and \Rfunction{exportToCSV}.
 
 \section{Visual Interface}
-Furthermore, we developed ddPCRvis, a GUI that gives access to the aforementioned functionalities of the ddPCRclust package directly through a web browser, powered by R Shiny \cite{shiny2017}.
-It also enables the user to check the results and manually correct them if necessary. The interface is available online at https://bibiserv.cebitec.uni-bielefeld.de/ddPCRvis/ or for download at https://github.com/bgbrink/ddPCRvis/.
+Furthermore, we developed ddPCRvis, a GUI that gives access to the aforementioned functionalities of the ddPCRclust package
+directly through a web browser, powered by R Shiny \cite{shiny2017}.
+It also enables the user to check the results and manually correct them if necessary. The interface is available online at
+https://bibiserv.cebitec.uni-bielefeld.de/ddPCRvis/ or for download at https://github.com/bgbrink/ddPCRvis/.
 
 \bibliography{ddPCRclust}
 
