@@ -27,12 +27,11 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers,
         f_leftPrim <- f_remNeg_temp
         flowCore::exprs(f_leftPrim) <- flowCore::exprs(f_leftPrim)[indices, 
             ]
-        x_leftPrim <- max(flowDensity::getPeaks(stats::density(flowCore::exprs(f_leftPrim)[, 
-            1], width = 1000), tinypeak.removal = tinyP)$Peaks)
-        y_leftPrim <- max(flowDensity::getPeaks(stats::density(flowCore::exprs(f_leftPrim)[, 
-            2], width = 1000), tinypeak.removal = tinyP)$Peaks)
-        if (x_leftPrim < (min(File[, 1]) + (max(File[, 1]) - min(File[, 
-            1]))/6)) {
+        x_leftPrim <- max(flowDensity::getPeaks(stats::density(flowCore::exprs(
+          f_leftPrim)[,1], width = 1000), tinypeak.removal = tinyP)$Peaks)
+        y_leftPrim <- max(flowDensity::getPeaks(stats::density(flowCore::exprs(
+          f_leftPrim)[,2], width = 1000), tinypeak.removal = tinyP)$Peaks)
+        if (x_leftPrim < (min(File[, 1]) + (max(File[, 1]) - min(File[,1]))/6)) {
             threshold <- tinyP
             break
         }
@@ -49,10 +48,10 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers,
         f_rightPrim <- f_remNeg_temp
         flowCore::exprs(f_rightPrim) <- flowCore::exprs(f_rightPrim)[indices, 
             ]
-        x_rightPrim <- max(flowDensity::getPeaks(stats::density(flowCore::exprs(f_rightPrim)[, 
-            1], width = 1000), tinypeak.removal = tinyP)$Peaks)
-        y_rightPrim <- max(flowDensity::getPeaks(stats::density(flowCore::exprs(f_rightPrim)[, 
-            2], width = 1000), tinypeak.removal = tinyP)$Peaks)
+        x_rightPrim <- max(flowDensity::getPeaks(stats::density(flowCore::exprs(
+          f_rightPrim)[,1], width = 1000), tinypeak.removal = tinyP)$Peaks)
+        y_rightPrim <- max(flowDensity::getPeaks(stats::density(flowCore::exprs(
+          f_rightPrim)[, 2], width = 1000), tinypeak.removal = tinyP)$Peaks)
         if (y_rightPrim < (min(File[, 2]) + (max(File[, 2]) - min(File[, 
             2]))/6)) {
             threshold <- min(threshold, tinyP)
@@ -80,8 +79,7 @@ findPrimaryClustersDensity <- function(f, File, f_remNeg, NumOfMarkers,
     # Chop off the very positive events
     indices <- which(flowCore::exprs(f_remNeg_temp)[, 2] <= (max(Rot_xy_leftPrim[2], 
         Rot_xy_rightPrim[2]) + CutAbovePrimary * ScaleChop))
-    flowCore::exprs(f_remNeg_temp) <- flowCore::exprs(f_remNeg_temp)[indices, 
-        ]
+    flowCore::exprs(f_remNeg_temp) <- flowCore::exprs(f_remNeg_temp)[indices,]
     
     # find thresholds to divide the primary clusters
     highP <- 1
