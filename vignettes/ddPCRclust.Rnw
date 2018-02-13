@@ -28,7 +28,7 @@ BiocStyle::latex()
 
 Droplet digital PCR (ddPCR) is an emerging technology for quantifying DNA. By partitioning the target DNA into 
 $\sim\,$20$\,$000 droplets, each serving as its own PCR reaction compartment, ddPCR has significantly increased 
-sensitivity compared to other technologies for DNA quantification.However, manual analysis of the data is time 
+sensitivity compared to other technologies for DNA quantification. However, manual analysis of the data is time 
 consuming and algorithms for automated analysis of non-orthogonal, multiplexed ddPCR data are unavailable,
 presenting a major bottleneck for the advancement of ddPCR transitioning from low-throughput to high-throughput. 
 During a ddPCR run, each genetic target is fluorescently labelled with a combination of two fluorophores 
@@ -46,10 +46,11 @@ ddPCRclust through a web-browser based GUI.
 The input data are one or multiple CSV files containing the raw data from Bio-Rad's droplet digital PCR systems 
 (QX100 and QX200). Each file can be represented as a two-dimensional data frame. 
 Each row within the data frame represents a single droplet, each column the respective intensities per colour channel. 
-Load from from your file system with \Rfunction{readFiles}.
+Load files from your file system with \Rfunction{readFiles}.
 
-\begin{table}[]
+\begin{table}[h!]
 \centering
+\small
 \begin{tabular}{ll}
 Ch1 Amplitude & Ch2 Amplitude \\
 2360.098      & 6119.26953    \\
@@ -64,8 +65,9 @@ Ch1 Amplitude & Ch2 Amplitude \\
 
 You can also set up a run template to tell ddPCRclust which and how many markers were used in each experiment.
 
-\begin{table}[]
+\begin{table}[h!]
 \centering
+\small
 \begin{tabular}{lllllll}
 Well & Sample type & No of markers & Marker 1 & Marker 2 & Marker 3 & Marker 4 \\
 B01  & Blood       & 4             & a        & b        & c        & d        \\
@@ -99,7 +101,7 @@ The main function of the package is \Rfunction{ddPCRclust}.
 This function runs the algorithm with one or multiple files, 
 automatically distributing them among all CPU cores (no parallelisation on Windows). 
 We provide eight exemplary ddPCR files along with this package. 
-Analyse them using the following commands.
+Analyse them using the following commands:
 
 <<results=hide>>=
 library(ddPCRclust)
@@ -123,26 +125,26 @@ p
 
 \subsubsection{Parameters}\label{params}
 \begin{itemize}
-\item{files} The input data obtained from the csv files. For more information, please see \ref{input}.
-\item{template} A data frame containing information about the individual ddPCR runs. For more information, 
+\item{files:} The input data obtained from the csv files. For more information, please see \ref{input}.
+\item{template:} A data frame containing information about the individual ddPCR runs. For more information, 
 please see \ref{input}.
-\item{numOfMarkers} The number of primary clusters that are expected according the experiment set up. 
+\item{numOfMarkers:} The number of primary clusters that are expected according the experiment set up. 
 Can be ignored if a template is provided. Else, a vector with length equal to \texttt{length(files)} should be provided, 
 containing the number of markers used for the respective reaction.
-\item{sensitivity} The clustering algorithms can be tweaked in order to partition the data into more or less clusters. 
+\item{sensitivity:} The clustering algorithms can be tweaked in order to partition the data into more or fewer clusters. 
 A sensible value lies between 0.1 and 2, the standard is 1. A higher value means the data is divided into more clusters, 
 a lower value means more clusters are merged. This allows fine tuning of the algorithm for exceptionally low or high CPDs.
-\item{similarityParam} If the distance of a droplet between two or more clusters is very similar, 
+\item{similarityParam:} If the distance of a droplet between two or more clusters is very similar, 
 the algorithm can't be sure where it belongs, so it will not be counted for either. 
 The standard is 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, 
 where 0 means none of the 'rain' droplets will be counted and 1 means all droplets will be counted.
-\item{distanceParam} When assigning rain between two clusters, typically the bottom 20\% are assigned to the lower cluster 
+\item{distanceParam:} When assigning rain between two clusters, typically the bottom 20\% are assigned to the lower cluster 
 and the remaining 80\% to the higher cluster. This parameter changes the ratio, 
 i.e. a value of 0.1 would assign only 10\% to the lower cluster.
-\item{fast} Run a simpler version of the algorithm that uses only flowDensity (see \ref{dens}) and thus is about 10x faster.
-For clean data, this might already deliver very good results. However, is is mostly intended to get a quick overview 
+\item{fast:} Run a simpler version of the algorithm that uses only flowDensity (see \ref{dens}) and thus is about 10x faster.
+For clean data, this might already deliver very good results. However, it is mostly intended to get a quick overview 
 over the data.
-\item{multithread} Distribute the algorithm amongst all CPU cores to speed up the computation (not available on Windows).
+\item{multithread:} Distribute the algorithm among all CPU cores to speed up the computation (not available on Windows).
 \end{itemize}
 
 \subsection{flowDensity}\label{dens}
@@ -202,11 +204,11 @@ where $C_i$ is the total number of positive droplets for target $i$ and $C_T$ th
 
 \subsubsection{Parameters}
 \begin{itemize}
-\item{results} The result of the ddPCRclust algorithm. 
-\item{template} A data frame containing information about the individual ddPCR runs. For more information, 
+\item{results:} The result of the ddPCRclust algorithm. 
+\item{template:} A data frame containing information about the individual ddPCR runs. For more information, 
 please see \ref{input}.
-\item{constantControl} The name of a marker that has been used a constant control. This marker has to be present in
-\emph{every} row of the provided template. The results will be normalized against this control.
+\item{constantControl:} The name of a marker that has been used as a constant control. This marker has to be present in
+\emph{every} row of the provided template. The results will be normalised against this control.
 \end{itemize}
 
 \subsection{Exporting results:}
