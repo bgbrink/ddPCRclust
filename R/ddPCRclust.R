@@ -147,7 +147,9 @@ readTemplate <- function(template) {
 #' @examples
 #' # Read files
 #' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
-#' files <- readFiles(exampleFiles[1:8])
+#' files <- readFiles(exampleFiles[3])
+#' # To read all example files uncomment the following line
+#' # files <- readFiles(exampleFiles[1:8])
 #' 
 #' # Read template
 #' template <- readTemplate(exampleFiles[9])
@@ -174,7 +176,6 @@ ddPCRclust <- function(files, template, numOfMarkers = 4, sensitivity = 1, simil
         stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
     }
     
-    time <- proc.time()
     if (!is.null(template)) {
       numOfMarkers <- lapply(files$ids, function(x) {
         unlist(template$template[which(template$template[, 1] == x), 3])
@@ -194,37 +195,23 @@ ddPCRclust <- function(files, template, numOfMarkers = 4, sensitivity = 1, simil
     }
     dens_result <- sam_result <- peaks_result <- rep(0, length(files$data))
     names(dens_result) <- names(sam_result) <- names(peaks_result) <- files$ids
-    if (length(files$data) > 1) {
-        dens_result <- mcmapply(dens_wrapper, file = files$data, numOfMarkers = numOfMarkers, 
+
+    dens_result <- mcmapply(dens_wrapper, file = files$data, numOfMarkers = numOfMarkers, 
+        sensitivity = sensitivity, markerNames = markerNames, similarityParam = similarityParam, 
+        distanceParam = distanceParam, SIMPLIFY = FALSE, mc.cores = nrOfCores)
+    
+    if (!fast) {
+        sam_result <- mcmapply(sam_wrapper, file = files$data, numOfMarkers = numOfMarkers, 
             sensitivity = sensitivity, markerNames = markerNames, similarityParam = similarityParam, 
             distanceParam = distanceParam, SIMPLIFY = FALSE, mc.cores = nrOfCores)
-        if (!fast) {
-            sam_result <- mcmapply(sam_wrapper, file = files$data, numOfMarkers = numOfMarkers, 
-                sensitivity = sensitivity, markerNames = markerNames, similarityParam = similarityParam, 
-                distanceParam = distanceParam, SIMPLIFY = FALSE, mc.cores = nrOfCores)
-            peaks_result <- mcmapply(peaks_wrapper, file = files$data, numOfMarkers = numOfMarkers, 
-                sensitivity = sensitivity, markerNames = markerNames, similarityParam = similarityParam, 
-                distanceParam = distanceParam, SIMPLIFY = FALSE, mc.cores = nrOfCores)
-        }
-        superResults <- mcmapply(ensemble_wrapper, dens_result, sam_result, peaks_result, 
-            files$data, SIMPLIFY = FALSE, mc.cores = nrOfCores)
-    } else {
-        dens_result <- dens_wrapper(file = files$data, numOfMarkers = numOfMarkers[[1]], 
-            sensitivity = sensitivity, markerNames = markerNames[[1]], similarityParam = similarityParam, 
-            distanceParam = distanceParam)
-        if (!fast) {
-            sam_result <- sam_wrapper(file = files$data, numOfMarkers = numOfMarkers[[1]], 
-                sensitivity = sensitivity, markerNames = markerNames[[1]], similarityParam = similarityParam, 
-                distanceParam = distanceParam)
-            peaks_result <- peaks_wrapper(file = files$data, numOfMarkers = numOfMarkers[[1]], 
-                sensitivity = sensitivity, markerNames = markerNames[[1]], similarityParam = similarityParam, 
-                distanceParam = distanceParam)
-        }
-        superResults <- list()
-        superResults[[files$ids]] <- ensemble_wrapper(dens_result, sam_result, peaks_result, 
-            files$data)
+        peaks_result <- mcmapply(peaks_wrapper, file = files$data, numOfMarkers = numOfMarkers, 
+            sensitivity = sensitivity, markerNames = markerNames, similarityParam = similarityParam, 
+            distanceParam = distanceParam, SIMPLIFY = FALSE, mc.cores = nrOfCores)
     }
-    time <- (proc.time() - time)[3]
+    
+    superResults <- mcmapply(ensemble_wrapper, dens_result, sam_result, peaks_result, 
+        files$data, SIMPLIFY = FALSE, mc.cores = nrOfCores)
+
     return(superResults)
 }
 
@@ -251,7 +238,9 @@ ddPCRclust <- function(files, template, numOfMarkers = 4, sensitivity = 1, simil
 #' @examples
 #' # Read files
 #' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
-#' files <- readFiles(exampleFiles[1:8])
+#' files <- readFiles(exampleFiles[3])
+#' # To read all example files uncomment the following line
+#' # files <- readFiles(exampleFiles[1:8])
 #' 
 #' # Read template
 #' template <- readTemplate(exampleFiles[9])
@@ -328,7 +317,9 @@ exportPlots <- function(data, directory, annotations, format = "png", invert = F
 #' @examples
 #' # Read files
 #' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
-#' files <- readFiles(exampleFiles[1:8])
+#' files <- readFiles(exampleFiles[3])
+#' # To read all example files uncomment the following line
+#' # files <- readFiles(exampleFiles[1:8])
 #' 
 #' # Read template
 #' template <- readTemplate(exampleFiles[9])
@@ -398,7 +389,9 @@ exportToExcel <- function(data, directory, annotations, raw = FALSE) {
 #' @examples
 #' # Read files
 #' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
-#' files <- readFiles(exampleFiles[1:8])
+#' files <- readFiles(exampleFiles[3])
+#' # To read all example files uncomment the following line
+#' # files <- readFiles(exampleFiles[1:8])
 #' 
 #' # Read template
 #' template <- readTemplate(exampleFiles[9])
@@ -1112,7 +1105,9 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
 #' @examples
 #' # Read files
 #' exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
-#' files <- readFiles(exampleFiles[1:8])
+#' files <- readFiles(exampleFiles[3])
+#' # To read all example files uncomment the following line
+#' # files <- readFiles(exampleFiles[1:8])
 #' 
 #' # Read template
 #' template <- readTemplate(exampleFiles[9])

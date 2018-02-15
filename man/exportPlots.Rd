@@ -34,7 +34,9 @@ plots them using the ggplot2 library and a custom colour palette and saves the p
 \examples{
 # Read files
 exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
-files <- readFiles(exampleFiles[1:8])
+files <- readFiles(exampleFiles[3])
+# To read all example files uncomment the following line
+# files <- readFiles(exampleFiles[1:8])
 
 # Read template
 template <- readTemplate(exampleFiles[9])
