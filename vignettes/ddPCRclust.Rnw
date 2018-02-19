@@ -79,14 +79,13 @@ E09  & FFPE        & 2             &          &          & c        & d
 \end{tabular}
 \end{table}
 
-\section{Methods}\label{irgendwie}
+\section{Methods}\label{methods}
 Data from ddPCR consists of a number of different clusters $l_1, 
 \dots, l_k$ and their respective centroids $c_1, \dots, c_k$, where $k$ is the number of clusters. 
 All droplets ($x_1, \dots, x_m$) represent one or more genetic targets $t_1, \dots, t_n$, 
 where $m$ is the number of droplets and $n$ is the number of targets. 
 Each cluster $l_i$ is defined as a group of droplets that contain an identical combination of targets. 
 ddPCRclust performes four steps to successfully analyze this data:
-\ref{irgendwie}
 \begin{enumerate}
 \item Find all cluster centroids $c$.
 \item Assign one or multiple targets $t$ to each cluster $l$ based on $c$.
@@ -137,7 +136,8 @@ containing the number of markers used for the respective reaction.
 A sensible value lies between 0.1 and 2, the standard is 1. A higher value means the data is divided into more clusters, 
 a lower value means more clusters are merged. This allows fine tuning of the algorithm for exceptionally low or high CPDs.
 \item{similarityParam:} If the distance of a droplet between two or more clusters is very similar, 
-the algorithm can't be sure where it belongs, so it will not be counted for either. 
+the algorithm can't be sure where it belongs. Therefore, it will not be counted for either if the ratio of the distances 
+from cluster 1 and cluster 2 is larger than similarityParam (assuming cluster 2 > cluster 1).
 The standard is 0.95, i.e. at least 95\% similarity. A sensible value lies between 0 and 1, 
 where 0 means none of the 'rain' droplets will be counted and 1 means all droplets will be counted.
 \item{distanceParam:} When assigning rain between two clusters, typically the bottom 20\% are assigned to the lower cluster 
@@ -146,7 +146,7 @@ i.e. a value of 0.1 would assign only 10\% to the lower cluster.
 \item{fast:} Run a simpler version of the algorithm that uses only flowDensity (see \ref{dens}) and thus is about 10x faster.
 For clean data, this might already deliver very good results. However, it is mostly intended to get a quick overview 
 over the data.
-\item{multithread:} Distribute the algorithm among all CPU cores to speed up the computation (not available on Windows).
+\item{multithread:} Distribute the algorithm among all CPU cores to speed up the computation if set to TRUE (not available on Windows). Default is FALSE.
 \end{itemize}
 
 \subsection{Initial clustering}
@@ -200,7 +200,7 @@ This part of the algorithm can be accessed with the function \Rfunction{runPeaks
 The parameters are the same as discussed in \ref{params}.
 
 
-\subsection{Copies per droplet:}
+\subsection{Copies per droplet}
 Once all droplets are correctly assigned, the actual copies per droplet (CPDs) for each target are calculated 
 by the function \Rfunction{calculateCPDs} according to Equation \ref{eq:cpd},
 \begin{equation}\label{eq:cpd}
@@ -214,10 +214,10 @@ where $C_i$ is the total number of positive droplets for target $i$ and $C_T$ th
 \item{template:} A data frame containing information about the individual ddPCR runs. For more information, 
 please see \ref{input}.
 \item{constantControl:} The name of a marker that has been used as a constant control. This marker has to be present in
-\emph{every} row of the provided template. The results will be normalised against this control.
+\emph{every} row of the provided template (i.e. in every reaction). The results will be normalised against this control.
 \end{itemize}
 
-\subsection{Exporting results:}
+\subsection{Exporting results}
 The results can be exported using \Rfunction{exportPlots}, \Rfunction{exportToExcel}, and \Rfunction{exportToCSV}.
 
 \section{Visual Interface}
