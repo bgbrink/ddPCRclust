@@ -9,17 +9,25 @@ init:
 
 install:
   ps: Bootstrap
+  ps: Start-FileDownload 'https://ci.appveyor.com/api/buildjobs/cx4yar11hk7kspke/artifacts/data.table_1.10.5.zip'
 
 cache:
   - C:\RLibrary
+  
 
 # Adapt as necessary starting from here
+
+install:
+  - ps: 
+
+
 environment:
   matrix:
     - R_VERSION: devel
       R_ARCH: i386
 
 build_script:
+  - R -e 'install.packages("data.table_1.10.5.zip", repos = NULL, type = "win.binary")'
   - travis-tool.sh install_deps
 
 test_script:
