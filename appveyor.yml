@@ -22,11 +22,11 @@ environment:
   matrix:
     - R_VERSION: devel
       R_ARCH: i386
+      USE_RTOOLS: true
 
 build_script:
-  - travis-tool.sh install_deps
   - R -e "install.packages('data.table', repos='https://cran.rstudio.com/')"
-
+  - travis-tool.sh install_deps
 
 test_script:
   - travis-tool.sh run_tests
