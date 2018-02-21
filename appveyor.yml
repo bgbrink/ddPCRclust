@@ -8,8 +8,7 @@ init:
         Import-Module '..\appveyor-tool.ps1'
 
 install:
-  ps: - Bootstrap
-      - Start-FileDownload 'https://ci.appveyor.com/api/buildjobs/cx4yar11hk7kspke/artifacts/data.table_1.10.5.zip'
+  ps: Bootstrap
 
 cache:
   - C:\RLibrary
@@ -18,8 +17,7 @@ cache:
 # Adapt as necessary starting from here
 
 install:
-  - ps: 
-
+  ps: Start-FileDownload 'https://ci.appveyor.com/api/buildjobs/cx4yar11hk7kspke/artifacts/data.table_1.10.5.zip'
 
 environment:
   matrix:
