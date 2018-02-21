@@ -24,8 +24,9 @@ environment:
       R_ARCH: i386
 
 build_script:
-  - R -e "install.packages('data.table_1.10.5.zip', repos = NULL, type = 'win.binary')"
   - travis-tool.sh install_deps
+  - R -e "install.packages('data.table', repos='https://cran.rstudio.com/')"
+
 
 test_script:
   - travis-tool.sh run_tests
