@@ -83,4 +83,4 @@ result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
 All functions are documented. You can find additional information using the help function of R: `?ddPCRclust`
 
 ## License
-ddPCRclust is licensed under the Artistic License 2.0.
+ddPCRclust is licensed under the [Artistic License 2.0](https://opensource.org/licenses/Artistic-2.0).
