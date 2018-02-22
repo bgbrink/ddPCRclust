@@ -83,17 +83,4 @@ result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
 All functions are documented. You can find additional information using the help function of R: `?ddPCRclust`
 
 ## License
-    ddPCRclust
-    Copyright (C) 2017  Benedikt G. Brink, Bielefeld University
-                        BC Cancer Agency Branch (“BCCA”)
-                        
-    CAREFULLY READ THE FULL TERMS AND CONDITIONS INCLUDED IN THE FILE 'LICENSE'.  
-    
-    LICENSE TO USE: BCCA hereby grants to You a personal, non-exclusive, non-transferable, limited license 
-    to use the Product solely for internal, non-commercial use for non-profit research or educational purposes
-    only on the terms and conditions contained in this Agreement. The Product may be installed on a maximum of 
-    one machine per Qualified User at Your premises only.  A copy of the Product installed on a single common 
-    machine may be shared for internal use by Qualified Users only. In order to be a “Qualified User”, an 
-    individual must be a student, researcher, professor, instructor or staff member of a non-profit educational
-    institution or organization who uses the Product solely for non-profit research or educational purposes.
-
+ddPCRclust is licensed under the Artistic License 2.0.
