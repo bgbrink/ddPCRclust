@@ -27,7 +27,15 @@ width="400">
 </p>
 
 ## Installation
-You can install this package like any other package from GitHub using devtools
+The package can be installed from Bioconductor (recommended): 
+```R
+## try http:// if https:// URLs are not supported
+source("https://bioconductor.org/biocLite.R")
+biocLite("ddPCRclust")
+```
+for additional information see https://bioconductor.org/packages/devel/bioc/html/ddPCRclust.html.
+
+Alternativley, you can also install this package like any other package from GitHub using devtools
 ```R
 library(devtools)
 install_github("bgbrink/ddPCRclust")
