@@ -27,25 +27,20 @@ width="400">
 </p>
 
 ## Installation
-The package can be installed from Bioconductor (recommended): 
+The package can be installed from Bioconductor (recommended). For additional information see https://bioconductor.org/packages/devel/bioc/html/ddPCRclust.html. 
 ```R
 ## try http:// if https:// URLs are not supported
 source("https://bioconductor.org/biocLite.R")
 biocLite("ddPCRclust")
 ```
-for additional information see https://bioconductor.org/packages/devel/bioc/html/ddPCRclust.html.
+
 
 Alternativley, you can also install this package like any other package from GitHub using devtools
 ```R
 library(devtools)
 install_github("bgbrink/ddPCRclust")
 ```
-**Disclaimer:** This method currently only works, when the GNU Scientific Library (GSL) is installed on your machine, because one of the dependencies (flowPeaks) needs it in order to compile. Otherwise you will have to install the packages from bioconductor manually before installing ddPCRclust:
-```R
-## try http:// if https:// URLs are not supported
-source("https://bioconductor.org/biocLite.R")
-biocLite(c('flowDensity', 'SamSPECTRAL', 'flowPeaks'))
-```
+**Disclaimer:** This method currently only works, when the GNU Scientific Library (GSL) is installed on your machine, because one of the dependencies (flowPeaks) needs it in order to compile. 
 
 ## Usage
 This package was written in close cooperation with the BC Cancer Agency in Vancouver, Canada. Please read their recently published [manuscript](https://doi.org/10.1371/journal.pone.0161274) for details on the background and how to produce the necessary data.
