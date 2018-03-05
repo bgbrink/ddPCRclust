@@ -27,15 +27,15 @@ width="400">
 </p>
 
 ## Installation
-The package can be installed from Bioconductor (recommended). For additional information see https://bioconductor.org/packages/devel/bioc/html/ddPCRclust.html. 
+The package can be installed from [Bioconductor](https://bioconductor.org/packages/devel/bioc/html/ddPCRclust.html) (recommended).
 ```R
 ## try http:// if https:// URLs are not supported
 source("https://bioconductor.org/biocLite.R")
 biocLite("ddPCRclust")
 ```
 
-
-Alternatively, you can also install this package like any other package from GitHub using devtools. *Disclaimer:* This method currently only works, when the GNU Scientific Library (GSL) is installed on your machine, because one of the dependencies (flowPeaks) needs it in order to compile. 
+Alternatively, you can also install this package like any other package from GitHub using devtools or by downloading the archive.   
+*Disclaimer:* This method currently only works, when the GNU Scientific Library (GSL) is installed on your machine, because one of the dependencies (flowPeaks) needs it in order to compile. 
 ```R
 library(devtools)
 install_github("bgbrink/ddPCRclust")
