@@ -35,12 +35,12 @@ biocLite("ddPCRclust")
 ```
 
 
-Alternativley, you can also install this package like any other package from GitHub using devtools
+Alternativley, you can also install this package like any other package from GitHub using devtools. *Disclaimer:* This method currently only works, when the GNU Scientific Library (GSL) is installed on your machine, because one of the dependencies (flowPeaks) needs it in order to compile. 
 ```R
 library(devtools)
 install_github("bgbrink/ddPCRclust")
 ```
-**Disclaimer:** This method currently only works, when the GNU Scientific Library (GSL) is installed on your machine, because one of the dependencies (flowPeaks) needs it in order to compile. 
+
 
 ## Usage
 This package was written in close cooperation with the BC Cancer Agency in Vancouver, Canada. Please read their recently published [manuscript](https://doi.org/10.1371/journal.pone.0161274) for details on the background and how to produce the necessary data.
