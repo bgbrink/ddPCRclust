@@ -85,5 +85,10 @@ result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
 ```
 All functions are documented. You can find additional information using the help function of R: `?ddPCRclust`
 
+## Reference
+Brink, Benedikt G., et al. "ddPCRclust: An R package and Shiny app for automated analysis of multiplexed ddPCR data." *Bioinformatics* (2018).
+
+https://www.ncbi.nlm.nih.gov/pubmed/29534153
+
 ## License
 ddPCRclust is licensed under the [Artistic License 2.0](https://opensource.org/licenses/Artistic-2.0).
