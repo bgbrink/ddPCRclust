@@ -1,6 +1,6 @@
 Package: ddPCRclust
 Title: Clustering algorithm for ddPCR data
-Version: 1.0.0
+Version: 1.1.1
 Authors@R: c(person("Benedikt G.", "Brink", email = "bbrink@cebitec.uni-bielefeld.de", role = c("aut", "cre")), 
           person("Justin", "Meskas", email = "jmeskas@bccrc.ca", role = "ctb"), 
           person("Ryan R.", "Brinkman", email = "rbrinkman@bccrc.ca", role = "ctb"))
