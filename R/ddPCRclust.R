@@ -196,16 +196,16 @@ ddPCRclust <- function(files, template, numOfMarkers = 4, sensitivity = 1, simil
     dens_result <- sam_result <- peaks_result <- rep(0, length(files$data))
     names(dens_result) <- names(sam_result) <- names(peaks_result) <- files$ids
 
-    dens_result <- mcmapply(dens_wrapper, file = files$data, numOfMarkers = numOfMarkers, 
-        sensitivity = sensitivity, markerNames = markerNames, similarityParam = similarityParam, 
+    dens_result <- mcmapply(dens_wrapper, file = files$data, numOfMarkers = numOfMarkers,
+        sensitivity = sensitivity, markerNames = markerNames, similarityParam = similarityParam,
         distanceParam = distanceParam, SIMPLIFY = FALSE, mc.cores = nrOfCores)
     
     if (!fast) {
-        sam_result <- mcmapply(sam_wrapper, file = files$data, numOfMarkers = numOfMarkers, 
-            sensitivity = sensitivity, markerNames = markerNames, similarityParam = similarityParam, 
+        sam_result <- mcmapply(sam_wrapper, file = files$data, numOfMarkers = numOfMarkers,
+            sensitivity = sensitivity, markerNames = markerNames, similarityParam = similarityParam,
             distanceParam = distanceParam, SIMPLIFY = FALSE, mc.cores = nrOfCores)
-        peaks_result <- mcmapply(peaks_wrapper, file = files$data, numOfMarkers = numOfMarkers, 
-            sensitivity = sensitivity, markerNames = markerNames, similarityParam = similarityParam, 
+        peaks_result <- mcmapply(peaks_wrapper, file = files$data, numOfMarkers = numOfMarkers,
+            sensitivity = sensitivity, markerNames = markerNames, similarityParam = similarityParam,
             distanceParam = distanceParam, SIMPLIFY = FALSE, mc.cores = nrOfCores)
     }
     
@@ -298,7 +298,7 @@ exportPlots <- function(data, directory, annotations, format = "png", invert = F
 
 #' Export the algorithms results to an Excel file
 #'
-#' A convinience function that takes the results of the droplClust algorithm and exports them to an Excel file.
+#' A convinience function that takes the results of the ddPCRclust algorithm and exports them to an Excel file.
 #'
 #' @param data The result of the ddPCRclust algorithm
 #' @param directory The parent directory where the files should saved. 
@@ -329,7 +329,7 @@ exportPlots <- function(data, directory, annotations, format = "png", invert = F
 #'
 #' # Export the results
 #' dir.create('./Results')
-#' exportToExcel(data = result, directory = './Results/', annotations = result$annotations)
+#' exportToExcel(data = result, directory = './Results/', annotations = template$annotations)
 #'
 exportToExcel <- function(data, directory, annotations, raw = FALSE) {
     directory <- normalizePath(directory, mustWork = TRUE)
@@ -370,7 +370,7 @@ exportToExcel <- function(data, directory, annotations, raw = FALSE) {
 
 #' Export the algorithms results to a csv file
 #'
-#' A convinience function that takes the results of the droplClust algorithm and exports them to a csv file.
+#' A convinience function that takes the results of the ddPCRclust algorithm and exports them to a csv file.
 #'
 #' @param data The result of the ddPCRclust algorithm
 #' @param directory The parent directory where the files should saved. 
@@ -401,7 +401,7 @@ exportToExcel <- function(data, directory, annotations, raw = FALSE) {
 #'
 #' # Export the results
 #' dir.create('./Results')
-#' exportToCSV(data = result, directory = './Results/', annotations = result$annotations)
+#' exportToCSV(data = result, directory = './Results/', annotations = template$annotations)
 #'
 exportToCSV <- function(data, directory, annotations, raw = FALSE) {
     directory <- normalizePath(directory, mustWork = TRUE)
@@ -527,6 +527,8 @@ runDensity <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NU
     # ****** Parameters *******
     scalingParam <- c(max(file[, 1])/25, max(file[, 2])/25)
     epsilon <- 0.02/sensitivity^3
+    names <- c("Empties", "1", "2", "3", "4", "1+2", "1+3", "1+4", "2+3", "2+4", 
+               "3+4", "1+2+3", "1+2+4", "1+3+4", "2+3+4", "1+2+3+4", "Removed", "Total")
     # *************************
     
     if (!is.numeric(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
@@ -538,6 +540,22 @@ runDensity <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NU
         stop("Invalid argument for distanceParam. Only values between 0 and 1 are supported.")
     } else if (!is.numeric(sensitivity) || sensitivity > 2 || sensitivity < 0.1) {
         stop("Invalid argument for sensitivity. Only values between 0.1 and 2 are supported.")
+    }
+    
+    if (max(file[,1]) + max(file[,2]) < 6000) {
+      removed <- NULL
+      
+      fDensResult <- rep(1, nrow(file))
+      
+      NumOfEventsClust <- table(c(fDensResult, seq_len(length(names) - 2))) - 1
+      NumOfEventsClust <- c(NumOfEventsClust, length(removed))  # add on removed
+      NumOfEventsClust <- c(NumOfEventsClust, sum(NumOfEventsClust))  # add on total
+      names(NumOfEventsClust) = names
+      
+      result <- cbind(file[, c(2, 1)], Cluster = fDensResult)
+      partition <- as.cl_partition(c(fDensResult, seq_len(length(names) - 1)))
+      return(list(data = result, counts = NumOfEventsClust, firstClusters = NULL, 
+                  partition = partition))
     }
     
     f <- flowCore::flowFrame(exprs = as.matrix(file))
@@ -702,8 +720,6 @@ runDensity <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NU
     deletions <- c(deletions, missingClusters)
     # deletions <- deletions[!deletions %in% missingClusters] order <-
     # order[1:nrow(firstClusters$clusters)]
-    names <- c("Empties", "1", "2", "3", "4", "1+2", "1+3", "1+4", "2+3", "2+4", 
-        "3+4", "1+2+3", "1+2+4", "1+3+4", "2+3+4", "1+2+3+4", "Removed", "Total")
     names_indices <- seq_along(names)
     indices <- vector()
     for (cl in deletions) {
@@ -814,6 +830,8 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL, 
     scalingParam <- c(max(file[, 1])/25, max(file[, 2])/25)
     epsilon <- 0.02/sensitivity^3
     m <- trunc(nrow(file)/20)
+    names <- c("Empties", "1", "2", "3", "4", "1+2", "1+3", "1+4", "2+3", "2+4", 
+               "3+4", "1+2+3", "1+2+4", "1+3+4", "2+3+4", "1+2+3+4", "Removed", "Total")
     # *************************
     
     if (!is.numeric(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
@@ -832,6 +850,21 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL, 
     #### Start of algorithm ####
     samRes <- SamSPECTRAL(data.points = as.matrix(file), dimensions = c(1, 2), normal.sigma = (200 * 
         sensitivity^2), separation.factor = (0.88 * sensitivity), m = m, talk = FALSE)
+    if (table(samRes)[1]/nrow(file) > 0.98) {
+      removed <- NULL
+      
+      samRes <- rep(1, nrow(file))
+      
+      NumOfEventsClust <- table(c(samRes, seq_len(length(names) - 2))) - 1
+      NumOfEventsClust <- c(NumOfEventsClust, length(removed))  # add on removed
+      NumOfEventsClust <- c(NumOfEventsClust, sum(NumOfEventsClust))  # add on total
+      names(NumOfEventsClust) = names
+      
+      result <- cbind(file[, c(2, 1)], Cluster = samRes)
+      partition <- as.cl_partition(c(samRes, seq_len(length(names) - 1)))
+      return(list(data = result, counts = NumOfEventsClust, firstClusters = NULL, 
+                  partition = partition))
+    }
     data <- file
     temp <- lapply(min(samRes, na.rm = TRUE):max(samRes, na.rm = TRUE), function(x) return(apply(data[samRes == 
         x, ], 2, stats::median, na.rm = TRUE)))
@@ -862,8 +895,7 @@ runSam <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL, 
     deletions <- c(deletions, missingClusters)
     # deletions <- deletions[!deletions %in% missingClusters] order <-
     # order[1:nrow(firstClusters$clusters)]
-    names <- c("Empties", "1", "2", "3", "4", "1+2", "1+3", "1+4", "2+3", "2+4", 
-        "3+4", "1+2+3", "1+2+4", "1+3+4", "2+3+4", "1+2+3+4", "Removed", "Total")
+
     names_indices <- seq_along(names)
     indices <- vector()
     for (cl in deletions) {
@@ -978,6 +1010,8 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
     # ****** Parameters *******
     scalingParam <- c(max(file[, 1])/25, max(file[, 2])/25)
     epsilon <- 0.02/sensitivity^3
+    names <- c("Empties", "1", "2", "3", "4", "1+2", "1+3", "1+4", "2+3", "2+4", 
+               "3+4", "1+2+3", "1+2+4", "1+3+4", "2+3+4", "1+2+3+4", "Removed", "Total")
     # *************************
     
     if (!is.numeric(numOfMarkers) || numOfMarkers > 4 || numOfMarkers < 1) {
@@ -995,6 +1029,21 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
     
     #### Start of algorithm ####
     fPeaksRes <- flowPeaks(file, tol = 0, h0 = (0.3/sensitivity^1.5), h = (0.5/sensitivity^1.5))
+    if (table(fPeaksRes$peaks.cluster)[1]/nrow(file) > 0.98) {
+      removed <- NULL
+      
+      fPeaksRes <- rep(1, nrow(file))
+      
+      NumOfEventsClust <- table(c(fPeaksRes, seq_len(length(names) - 2))) - 1
+      NumOfEventsClust <- c(NumOfEventsClust, length(removed))  # add on removed
+      NumOfEventsClust <- c(NumOfEventsClust, sum(NumOfEventsClust))  # add on total
+      names(NumOfEventsClust) = names
+      
+      result <- cbind(file[, c(2, 1)], Cluster = fPeaksRes)
+      partition <- as.cl_partition(c(fPeaksRes, seq_len(length(names) - 1)))
+      return(list(data = result, counts = NumOfEventsClust, firstClusters = NULL, 
+                  partition = partition))
+    }
     data <- file
     clusterMeans <- fPeaksRes$peaks$mu
     rowSums <- vapply(seq_len(nrow(clusterMeans)), function(x) return(sum(clusterMeans[x, 
@@ -1024,8 +1073,7 @@ runPeaks <- function(file, sensitivity = 1, numOfMarkers, missingClusters = NULL
     deletions <- c(deletions, missingClusters)
     # deletions <- deletions[!deletions %in% missingClusters] order <-
     # order[1:nrow(firstClusters$clusters)]
-    names <- c("Empties", "1", "2", "3", "4", "1+2", "1+3", "1+4", "2+3", "2+4", 
-        "3+4", "1+2+3", "1+2+4", "1+3+4", "2+3+4", "1+2+3+4", "Removed", "Total")
+
     names_indices <- seq_along(names)
     indices <- vector()
     for (cl in deletions) {
@@ -1217,7 +1265,8 @@ createEnsemble <- function(dens = NULL, sam = NULL, peaks = NULL, file) {
     }
     
     if (!length(listResults)) {
-        next
+      superResult <- cbind(file, Cluster = rep(0, nrow(file)))
+      return(list(data = superResult, confidence = 0, counts = NULL, nrOfAlgorithms = length(listResults)))
     } else if (length(listResults) == 1) {
         comb_ids <- cl_class_ids(listResults[[1]])
         conf <- 1

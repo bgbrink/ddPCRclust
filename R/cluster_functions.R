@@ -1658,7 +1658,7 @@ assignRain <- function(clusterMeans, data, result, emptyDroplets, firstClusters,
                 cl))
             S <- stats::var(newData[thisCluster, , drop = FALSE])
             mahaDist <- stats::mahalanobis(newData, clusterMeans[cl, ], 
-                S)
+                                           S, tol=1e-20)
             posEv <- which(mahaDist < mean(mahaDist[thisCluster]))
             result[as.numeric(rownames(newData[posEv, ]))] <- cl
             newData <- newData[-posEv, , drop = FALSE]
