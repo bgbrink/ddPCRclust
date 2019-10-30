@@ -79,9 +79,23 @@ We provide eight examplary ddPCR files under ```ddPCRclust/inst/extdata/```
 
 Run the algorithm using the provided examples with the following command:
 ```R
+# Read files
+exampleFiles <- list.files(paste0(find.package('ddPCRclust'), '/extdata'), full.names = TRUE)
+files <- readFiles(exampleFiles[3])
+# To read all example files uncomment the following line
+# files <- readFiles(exampleFiles[1:8])
+
+# Read template
+template <- readTemplate(exampleFiles[9])
+
 # Run ddPCRclust
-exampleFiles <- list.files(paste0(find.package("ddPCRclust"), "/extdata"), full.names = TRUE)
-result <- ddPCRclust(files = exampleFiles[1:8], template = exampleFiles[9])
+result <- ddPCRclust(files, template)
+
+# Plot the results
+library(ggplot2)
+p <- ggplot(data = result$B01$data, mapping = aes(x = Ch2.Amplitude, y = Ch1.Amplitude))
+p <- p + geom_point(aes(color = factor(Cluster)), size = .5, na.rm = TRUE) +
+  ggtitle('B01 example')+theme_bw() + theme(legend.position='none')
 ```
 All functions are documented. You can find additional information using the help function of R: `?ddPCRclust`
 
